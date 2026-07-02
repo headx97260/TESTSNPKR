@@ -1,0 +1,10 @@
+{
+  "name": "Régime de marché — S&P 500",
+  "short_name": "Régime S&P500",
+  "description": "Lecture hebdomadaire du contexte de marché du S&P 500 — outil d'aide à la décision, pas un conseil financier.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#12141a",
+  "theme_color": "#12141a",
+  "icons": []
+}
