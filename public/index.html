@@ -299,6 +299,194 @@
     font-size: 0.72rem;
     color: var(--text-muted);
   }
+
+  /* ============================================================
+     MODULE 2 — CADRAN MACRO (Gave) : séparateur de page + styles
+     ============================================================ */
+  .page-divider {
+    margin: 56px 0 32px;
+    text-align: center;
+    position: relative;
+  }
+  .page-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+  .page-divider span {
+    position: relative;
+    background: var(--bg);
+    padding: 0 16px;
+    font-family: var(--font-data);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .module-header { margin-bottom: 20px; }
+  .module-header h1 {
+    font-size: 1.15rem;
+    margin: 0 0 4px;
+  }
+  .module-header .subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .quadrant-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px 18px 32px;
+  }
+  .quadrant-grid {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    aspect-ratio: 1 / 1;
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .axis-line { position: absolute; background: var(--border); }
+  .axis-h { top: 50%; left: 0; right: 0; height: 1px; }
+  .axis-v { left: 50%; top: 0; bottom: 0; width: 1px; }
+  .quad-label {
+    position: absolute;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+    max-width: 46%;
+  }
+  .quad-label .asset {
+    display: block;
+    font-family: var(--font-data);
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .q-tr { top: 6%; right: 4%; text-align: right; }
+  .q-tr .asset { color: var(--gold); }
+  .q-tl { top: 6%; left: 4%; }
+  .q-br { bottom: 6%; right: 4%; text-align: right; }
+  .q-br .asset { color: var(--green); }
+  .q-bl { bottom: 6%; left: 4%; }
+  .q-bl .asset { color: #6b8fb8; }
+  .marker {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, 50%);
+  }
+  .marker::before, .marker::after { content: ''; position: absolute; background: var(--gold); }
+  .marker::before { width: 14px; height: 2px; top: 6px; left: 0; }
+  .marker::after { width: 2px; height: 14px; left: 6px; top: 0; }
+  .marker-glow {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,161,90,0.35) 0%, transparent 70%);
+    transform: translate(-50%, 50%);
+  }
+  .axis-caption {
+    position: absolute;
+    font-family: var(--font-data);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .cap-right { right: -8px; top: 50%; transform: translateY(-50%); text-align: right; }
+  .cap-top { top: -20px; left: 50%; transform: translateX(-50%); }
+
+  .quadrant-readout {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 20px;
+    font-family: var(--font-data);
+    font-size: 0.78rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .quadrant-readout div { color: var(--text-muted); text-align: center; }
+  .quadrant-readout span { color: var(--text); font-weight: 600; display: block; margin-top: 2px; }
+
+  .gave-cards { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+  .gave-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .gave-card .rule-tag {
+    display: inline-block;
+    font-family: var(--font-data);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--panel-2);
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .gave-card h3 { font-size: 0.9rem; margin-bottom: 6px; }
+  .gave-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.55; }
+  .gave-card p + p { margin-top: 6px; }
+  .gave-card .highlight { color: var(--text); }
+  .gave-card.alert { border-left: 3px solid var(--red); }
+
+  /* --- Encadré : mode d'emploi des deux outils --- */
+  .usage-box {
+    margin-top: 36px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px;
+    padding: 20px 22px;
+  }
+  .usage-box h2 {
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  .usage-step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .usage-step:last-child { margin-bottom: 0; }
+  .usage-step .step-num {
+    font-family: var(--font-data);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--gold);
+    flex-shrink: 0;
+    width: 22px;
+  }
+  .usage-step .step-body h3 {
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+  }
+  .usage-step .step-body p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .usage-step .step-body .tool-name {
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
 </style>
 </head>
 <body>
@@ -372,6 +560,99 @@
 <footer class="app-footer">
   Sources : Stooq (primaire) avec repli automatique sur Yahoo Finance. Calcul basé sur bougies hebdomadaires (clôture vendredi US).
   La semaine en cours est exclue des calculs tant qu'elle n'est pas clôturée.
+</footer>
+
+<div class="page-divider"><span>Module 2 — Repères macro long terme</span></div>
+
+<div class="module-header">
+  <h1>Où en est le marché dans le cadran de Gave</h1>
+  <div class="subtitle">Deux ratios de prix, chacun comparé à sa propre moyenne mobile à 7 ans — aucune donnée macroéconomique. Mise à jour mensuelle, indépendante du score hebdomadaire ci-dessus. <span id="gave-date" style="font-family: var(--font-data);"></span></div>
+</div>
+
+<section>
+  <div class="quadrant-panel">
+    <div class="quadrant-grid">
+      <div class="axis-line axis-h"></div>
+      <div class="axis-line axis-v"></div>
+      <div class="axis-caption cap-right">+ Croissance</div>
+      <div class="axis-caption cap-top">+ Inflation (Or)</div>
+      <div class="quad-label q-tl">Récession<br>inflationniste<span class="asset">Cash</span></div>
+      <div class="quad-label q-tr">Boom<br>inflationniste<span class="asset">Or</span></div>
+      <div class="quad-label q-bl">Déflation<br>dépression<span class="asset">Obligations</span></div>
+      <div class="quad-label q-br">Boom<br>déflationniste<span class="asset">Actions</span></div>
+      <!-- Position calculée par gave-engine.js : X = écart croissance, Y = écart inflation, cappés à ±100% -->
+      <div class="marker-glow" id="gave-marker-glow" style="left: 75.25%; bottom: 97%;"></div>
+      <div class="marker" id="gave-marker" style="left: 75.25%; bottom: 97%;"></div>
+    </div>
+    <div class="quadrant-readout" id="gave-readout">
+      <div>Écart Croissance<span id="gave-ecart-croissance">+50.5 %</span></div>
+      <div>Écart Inflation<span id="gave-ecart-inflation">+94.0 %</span></div>
+      <div>Cadran<span id="gave-cadran" style="color:var(--gold)">Boom inflationniste</span></div>
+    </div>
+  </div>
+
+  <div class="gave-cards">
+    <div class="gave-card">
+      <span class="rule-tag">Règle 1 — Or / Obligations</span>
+      <h3>Pourquoi la position est ici</h3>
+      <p>Le ratio <span class="highlight">Or / Obligations US</span> est <span class="highlight" id="gave-detail-inflation">94 % au-dessus</span> de sa moyenne mobile à 7 ans. L'or fait significativement mieux que les obligations depuis plusieurs années consécutives, pas seulement sur quelques semaines.</p>
+      <p>Ce ratio arbitre entre la valeur de rareté (or, protection contre l'érosion monétaire) et la valeur-temps (obligations, pari sur une désinflation). Rester durablement au-dessus de la moyenne signale un régime où la thésaurisation continue d'être récompensée face au prêt à taux fixe.</p>
+    </div>
+
+    <div class="gave-card">
+      <span class="rule-tag">Axe Croissance — S&amp;P 500 / WTI</span>
+      <h3>Ce que dit l'axe horizontal</h3>
+      <p>Le ratio <span class="highlight">S&amp;P 500 / pétrole (WTI)</span> est <span class="highlight" id="gave-detail-croissance">50.5 % au-dessus</span> de sa MM7ans. Le prix des actions progresse nettement plus vite que celui de l'énergie — signe que l'activité économique reste solide, pas étranglée par un choc énergétique.</p>
+      <p>Base du raisonnement : l'économie n'est que de l'énergie transformée. Une forte dégradation de ce ratio a historiquement précédé les corrections les plus brutales — ce n'est pas le cas actuellement.</p>
+    </div>
+
+    <div class="gave-card alert">
+      <span class="rule-tag">Règle 2 — Actions / Or (indicateur complémentaire)</span>
+      <h3>Un signal à surveiller, pas encore une alerte</h3>
+      <p>Le ratio <span class="highlight">Actions / Or</span> est repassé légèrement <span class="highlight" id="gave-detail-actionsor">sous sa MM7ans (−6.1 %)</span>, après avoir été au-dessus pendant plus de deux ans. C'est le sens inverse du reste du tableau.</p>
+      <p>Gave fixe sa limite de patience à <span class="highlight">7 ans</span> avant d'agir sur ce signal seul. Le basculement est trop récent pour en tirer une conclusion — à revoir régulièrement, pas à ignorer.</p>
+    </div>
+
+    <div class="gave-card">
+      <p class="config-note" style="margin-top:0;">Les moyennes mobiles à 7 ans ne sont calculables que depuis juillet 2023 sur cet historique — la robustesse du signal augmentera avec le temps. Ce module décrit un cadre de lecture macro-économique, pas une recommandation d'investissement personnalisée.</p>
+    </div>
+  </div>
+</section>
+
+<div class="usage-box">
+  <h2>Comment utiliser les deux outils ensemble</h2>
+
+  <div class="usage-step">
+    <span class="step-num">1</span>
+    <div class="step-body">
+      <span class="tool-name">Cadran macro (ci-dessus)</span>
+      <h3>Fixer le cap général, une fois par mois</h3>
+      <p>Commencez toujours ici. Ce cadran change lentement (les moyennes portent sur 7 ans) — il répond à une question de fond : sommes-nous dans un régime plutôt favorable aux valeurs de rareté (or) ou aux valeurs d'efficacité (actions) ? C'est ce cadre qui doit orienter la répartition générale de votre épargne, pas l'inverse.</p>
+    </div>
+  </div>
+
+  <div class="usage-step">
+    <span class="step-num">2</span>
+    <div class="step-body">
+      <span class="tool-name">Score hebdomadaire (module 1, en haut de page)</span>
+      <h3>Affiner le contexte à court terme, chaque semaine</h3>
+      <p>Une fois le cap fixé par le cadran macro, le score hebdomadaire donne une lecture plus fine du contexte immédiat du marché actions (tendance, momentum, volatilité, concentration). Il aide à situer le climat de la semaine à l'intérieur du régime déjà identifié — il ne le remet pas en cause.</p>
+    </div>
+  </div>
+
+  <div class="usage-step">
+    <span class="step-num">3</span>
+    <div class="step-body">
+      <span class="tool-name">En cas de désaccord entre les deux</span>
+      <h3>Le cadran macro prime, sauf signal de rupture confirmé</h3>
+      <p>Si le score hebdomadaire se dégrade fortement alors que le cadran macro reste stable, il s'agit probablement d'une fluctuation normale à court terme — pas d'un changement de régime. Un vrai changement de cap se lit dans le cadran macro lui-même (un ratio qui repasse sous sa MM7ans), pas dans une mauvaise semaine du score court terme.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="app-footer" style="margin-top:32px;">
+  Cadran macro : sources GLD, TLT (ajusté), SPY (ajusté), WTI continu — via Yahoo Finance (repli du proxy Stooq/Yahoo existant).
+  Aucune de ces deux sections ne constitue un conseil en investissement personnalisé.
 </footer>
 
 <script>
@@ -792,6 +1073,139 @@ function average(arr) {
   return valid.reduce((a, b) => a + b, 0) / valid.length;
 }
 </script>
+<script id="gave-engine-inline">
+// ============================================================
+// GAVE-ENGINE — Cadran macro (Croissance × Inflation)
+// Deux ratios de prix, chacun comparé à sa propre moyenne mobile
+// à 7 ans (364 semaines). Aucune donnée macro, aucune fuite :
+// à l'indice i, la MM7ans ne dépend que des points <= i.
+// ============================================================
+
+const MA_WINDOW_WEEKS = 7 * 52; // 364 semaines
+
+/**
+ * Aligne deux séries [date, valeur] sur leurs dates communes et calcule
+ * le ratio a/b pour chaque date commune, trié par date croissante.
+ * @returns {Array<{date: string, value: number}>}
+ */
+function buildRatioSeriesFromPairs(seriesA, seriesB) {
+  const mapA = seriesA instanceof Map ? seriesA : new Map(seriesA);
+  const mapB = seriesB instanceof Map ? seriesB : new Map(seriesB);
+  const dates = [...mapA.keys()].filter((d) => mapB.has(d)).sort();
+  return dates.map((date) => ({ date, value: mapA.get(date) / mapB.get(date) }));
+}
+
+/**
+ * Moyenne mobile sur une fenêtre de `windowWeeks` points, walk-forward
+ * (la valeur à l'indice i ne dépend que des points <= i).
+ * @returns {Array<number|null>} même longueur que `series`, null tant que
+ *   la fenêtre n'est pas remplie.
+ */
+function movingAverage(series, windowWeeks) {
+  const result = new Array(series.length).fill(null);
+  for (let i = 0; i < series.length; i++) {
+    if (i < windowWeeks - 1) continue;
+    let sum = 0;
+    for (let j = i - windowWeeks + 1; j <= i; j++) sum += series[j].value;
+    result[i] = sum / windowWeeks;
+  }
+  return result;
+}
+
+/**
+ * Écart en % entre la dernière valeur d'une série de ratios et sa MM7ans.
+ * @returns {{ecartPct: number, ratio: number, ma: number, date: string}|null}
+ *   null si la MM7ans n'est pas encore calculable (historique < 7 ans).
+ */
+function lastEcartVsMA(ratioSeries, windowWeeks = MA_WINDOW_WEEKS) {
+  const ma = movingAverage(ratioSeries, windowWeeks);
+  for (let i = ratioSeries.length - 1; i >= 0; i--) {
+    if (ma[i] !== null) {
+      const ratio = ratioSeries[i].value;
+      return {
+        ecartPct: ((ratio - ma[i]) / ma[i]) * 100,
+        ratio,
+        ma: ma[i],
+        date: ratioSeries[i].date,
+      };
+    }
+  }
+  return null;
+}
+
+/**
+ * Détermine le cadran (au sens de Gave) à partir des deux écarts.
+ * X = écart Croissance (S&P/WTI vs MM7ans), Y = écart Inflation (Or/Obligations vs MM7ans).
+ */
+function classifyQuadrant(ecartCroissance, ecartInflation) {
+  const croissanceForte = ecartCroissance > 0;
+  const inflationForte = ecartInflation > 0;
+  if (croissanceForte && inflationForte) return { key: 'boom-inflationniste', label: 'Boom inflationniste', asset: 'Or' };
+  if (!croissanceForte && inflationForte) return { key: 'recession-inflationniste', label: 'Récession inflationniste', asset: 'Cash' };
+  if (croissanceForte && !inflationForte) return { key: 'boom-deflationniste', label: 'Boom déflationniste', asset: 'Actions' };
+  return { key: 'deflation-depression', label: 'Déflation dépression', asset: 'Obligations' };
+}
+
+/**
+ * Calcule l'ensemble des indicateurs du module Gave.
+ * @param {object} data - séries brutes [[date, close], ...] pour chaque actif
+ * @param {Array} data.gld - or (pas de dividende, close = adjClose)
+ * @param {Array} data.tlt - obligations longues US, valeurs AJUSTÉES (coupons réinvestis)
+ * @param {Array} data.spyAdj - actions US, valeurs AJUSTÉES (dividendes réinvestis)
+ * @param {Array} data.wti - pétrole WTI continu
+ * @param {Array} data.spx - S&P 500 (indice de prix, pas de dividende à ajuster ici : comparé à l'énergie, pas à un autre actif financier)
+ * @returns {object} résultat complet ou { success:false, errors:[...] }
+ */
+function computeGaveIndicators({ gld, tlt, spyAdj, wti, spx }) {
+  const errors = [];
+  const MIN_POINTS = MA_WINDOW_WEEKS + 1;
+
+  if (!gld || gld.length < MIN_POINTS) errors.push('Historique Or (GLD) insuffisant pour la MM7ans (7 ans requis).');
+  if (!tlt || tlt.length < MIN_POINTS) errors.push('Historique Obligations (TLT ajusté) insuffisant pour la MM7ans.');
+  if (!spyAdj || spyAdj.length < MIN_POINTS) errors.push('Historique Actions (SPY ajusté) insuffisant pour la MM7ans.');
+  if (!wti || wti.length < MIN_POINTS) errors.push('Historique WTI insuffisant pour la MM7ans.');
+  if (!spx || spx.length < MIN_POINTS) errors.push('Historique S&P 500 insuffisant pour la MM7ans.');
+  if (errors.length > 0) return { success: false, errors };
+
+  const ratioOrObligations = buildRatioSeriesFromPairs(gld, tlt);
+  const ratioActionsOr = buildRatioSeriesFromPairs(spyAdj, gld);
+  const ratioCroissance = buildRatioSeriesFromPairs(spx, wti);
+
+  const inflation = lastEcartVsMA(ratioOrObligations);
+  const actionsOr = lastEcartVsMA(ratioActionsOr);
+  const croissance = lastEcartVsMA(ratioCroissance);
+
+  if (!inflation || !actionsOr || !croissance) {
+    return { success: false, errors: ["Moins de 7 ans de données communes après alignement des dates — la MM7ans n'est pas encore calculable."] };
+  }
+
+  const quadrant = classifyQuadrant(croissance.ecartPct, inflation.ecartPct);
+
+  return {
+    success: true,
+    errors: [],
+    date: inflation.date,
+    inflation, // Règle 1 : Or / Obligations
+    croissance, // Axe croissance : S&P / WTI
+    actionsOr, // Règle 2 : Actions / Or (indicateur complémentaire)
+    quadrant,
+    regle1Signal: inflation.ecartPct > 0 ? 'OR' : 'OBLIGATIONS',
+    regle2Signal: actionsOr.ecartPct > 0 ? 'ACTIONS' : 'OR (alerte)',
+  };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    MA_WINDOW_WEEKS,
+    buildRatioSeriesFromPairs,
+    movingAverage,
+    lastEcartVsMA,
+    classifyQuadrant,
+    computeGaveIndicators,
+  };
+}
+
+</script>
 <script id="app-logic-inline">
 // ============================================================
 // APPLICATION — orchestration
@@ -804,6 +1218,16 @@ const TICKERS = {
   spy: 'spy.us',
   rsp: 'rsp.us',
   vix: '^vix',
+};
+
+// Module Gave (cadran macro) — tickers séparés, sources forcées pour GLD/TLT/SPY
+// (adjClose requis pour TLT/SPY ; GLD n'a pas de dividende donc close=adjClose,
+// mais on force quand même la source Yahoo pour rester sur un pipeline homogène).
+const GAVE_TICKERS = {
+  gld: { ticker: 'gld.us', source: 'yahoo' },
+  tlt: { ticker: 'tlt.us', source: 'yahoo' },
+  spyAdj: { ticker: 'spy.us', source: 'yahoo' },
+  wti: { ticker: 'CL=F', source: 'yahoo' }, // symbole Yahoo natif — cl.f n'existe dans aucun mapping
 };
 
 const DEFAULT_PARAMS = {
@@ -870,6 +1294,93 @@ async function fetchAllData(statusCallback) {
 }
 
 // --------------------------------------------------------------
+// Module Gave (cadran macro) — fetch dédié, source forcée Yahoo
+// --------------------------------------------------------------
+
+async function fetchGaveTicker(key, statusCallback) {
+  const { ticker, source } = GAVE_TICKERS[key];
+  statusCallback(`Récupération de ${key.toUpperCase()} (${ticker}, ${source})...`, 'pending');
+  try {
+    const res = await fetch(`/api/prices?ticker=${encodeURIComponent(ticker)}&interval=w&source=${source}`);
+    const json = await res.json();
+    if (!res.ok || json.error) {
+      statusCallback(`Échec ${key.toUpperCase()} : ${json.error || 'erreur inconnue'}`, 'err');
+      return null;
+    }
+    // GLD/WTI : pas de dividende, close = adjClose (champ parfois absent) ; TLT/SPY : adjClose requis.
+    const series = json.data
+      .filter((c) => c.close !== null && c.close !== undefined)
+      .map((c) => [c.date, c.adjClose !== null && c.adjClose !== undefined ? c.adjClose : c.close]);
+    statusCallback(`${key.toUpperCase()} OK (source: ${json.source}, ${series.length} bougies)`, 'ok');
+    return series;
+  } catch (e) {
+    statusCallback(`Erreur réseau ${key.toUpperCase()} : ${e.message}`, 'err');
+    return null;
+  }
+}
+
+async function fetchAllGaveData(statusCallback) {
+  const [gld, tlt, spyAdj, wti] = await Promise.all([
+    fetchGaveTicker('gld', statusCallback),
+    fetchGaveTicker('tlt', statusCallback),
+    fetchGaveTicker('spyAdj', statusCallback),
+    fetchGaveTicker('wti', statusCallback),
+  ]);
+  return { gld, tlt, spyAdj, wti };
+}
+
+const STORAGE_KEY_GAVE_CACHE = 'marketRegimeGaveCache_v1';
+const GAVE_CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours — mise à jour mensuelle
+
+function loadGaveCache() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_GAVE_CACHE);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* cache absent ou corrompu */ }
+  return null;
+}
+
+function saveGaveCache(result) {
+  try {
+    localStorage.setItem(STORAGE_KEY_GAVE_CACHE, JSON.stringify({ fetchedAt: new Date().toISOString(), result }));
+  } catch (e) { /* quota localStorage dépassé : tant pis, pas bloquant */ }
+}
+
+function isGaveCacheFresh(cache) {
+  if (!cache || !cache.fetchedAt) return false;
+  return (Date.now() - new Date(cache.fetchedAt).getTime()) < GAVE_CACHE_MAX_AGE_MS;
+}
+
+/**
+ * Calcule (ou réutilise depuis le cache mensuel) le module Gave.
+ * @param {Array} spxSeries - réutilise les données ^spx déjà récupérées par le module hebdomadaire.
+ */
+async function runGaveAnalysis(spxSeries, statusCallback, forceRefresh = false) {
+  const cache = loadGaveCache();
+  if (!forceRefresh && isGaveCacheFresh(cache)) {
+    statusCallback('Module Gave : cache mensuel réutilisé (moins de 30 jours).', 'ok');
+    return cache.result;
+  }
+
+  const gaveData = await fetchAllGaveData(statusCallback);
+  const result = computeGaveIndicators({
+    gld: gaveData.gld,
+    tlt: gaveData.tlt,
+    spyAdj: gaveData.spyAdj,
+    wti: gaveData.wti,
+    spx: spxSeries,
+  });
+
+  if (result.success) {
+    saveGaveCache(result);
+    statusCallback('Module Gave : calcul réussi, mis en cache pour 30 jours.', 'ok');
+  } else {
+    statusCallback(`Module Gave : ${result.errors.join(' ')}`, 'err');
+  }
+  return result;
+}
+
+// --------------------------------------------------------------
 // Calcul complet : indicateurs + score
 // --------------------------------------------------------------
 
@@ -932,7 +1443,7 @@ function computeAnalysis(rawData, params, weights) {
   const ratioMA = averageOf(ratioSeries.slice(-10).map((r) => r.value)); // moyenne mobile 10 semaines du ratio
 
   // --- Scores par pilier ---
-  const tendance = scoreTendance({ close, ema21, ema50, ema21Prev });
+  const tendance = scoreTendance({ close, ema21, ema50 });
   const momentum = scoreMomentum({ rsi, macdHistogram, macdHistogramPrev });
   const volatilite = scoreVolatilite({ vix, atrPct });
   const concentration = scoreConcentration({ ratioSpyRsp, ratioSpyRspMA: ratioMA });
@@ -1428,12 +1939,71 @@ importFileInput.addEventListener('change', (e) => {
 });
 
 // --------------------------------------------------------------
+// Module Gave (cadran macro) — rendu dynamique
+// --------------------------------------------------------------
+function clampPct(v, min = -100, max = 100) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function formatEcart(ecartPct) {
+  const sign = ecartPct >= 0 ? '+' : '';
+  return `${sign}${ecartPct.toFixed(1)} %`;
+}
+
+function renderGaveModule(result) {
+  const readout = document.getElementById('gave-readout');
+  if (!result || !result.success) {
+    if (readout) {
+      readout.innerHTML = `<div style="color: var(--red);">Module Gave indisponible : ${result ? result.errors.join(' ') : 'erreur inconnue'}</div>`;
+    }
+    return;
+  }
+
+  const marker = document.getElementById('gave-marker');
+  const glow = document.getElementById('gave-marker-glow');
+  const leftPct = 50 + clampPct(result.croissance.ecartPct) / 2;
+  const bottomPct = 50 + clampPct(result.inflation.ecartPct) / 2;
+  if (marker) { marker.style.left = `${leftPct}%`; marker.style.bottom = `${bottomPct}%`; }
+  if (glow) { glow.style.left = `${leftPct}%`; glow.style.bottom = `${bottomPct}%`; }
+
+  const ecartCroissanceEl = document.getElementById('gave-ecart-croissance');
+  const ecartInflationEl = document.getElementById('gave-ecart-inflation');
+  const cadranEl = document.getElementById('gave-cadran');
+  if (ecartCroissanceEl) ecartCroissanceEl.textContent = formatEcart(result.croissance.ecartPct);
+  if (ecartInflationEl) ecartInflationEl.textContent = formatEcart(result.inflation.ecartPct);
+  if (cadranEl) cadranEl.textContent = result.quadrant.label;
+
+  const detailInflation = document.getElementById('gave-detail-inflation');
+  const detailCroissance = document.getElementById('gave-detail-croissance');
+  const detailActionsOr = document.getElementById('gave-detail-actionsor');
+  if (detailInflation) detailInflation.textContent = `${Math.abs(result.inflation.ecartPct).toFixed(1)} % ${result.inflation.ecartPct >= 0 ? 'au-dessus' : 'en-dessous'}`;
+  if (detailCroissance) detailCroissance.textContent = `${Math.abs(result.croissance.ecartPct).toFixed(1)} % ${result.croissance.ecartPct >= 0 ? 'au-dessus' : 'en-dessous'}`;
+  if (detailActionsOr) detailActionsOr.textContent = `${result.actionsOr.ecartPct >= 0 ? 'au-dessus' : 'sous'} sa MM7ans (${formatEcart(result.actionsOr.ecartPct)})`;
+
+  const dateLabel = document.getElementById('gave-date');
+  if (dateLabel) dateLabel.textContent = `Mise à jour : ${formatDate(result.date)}`;
+}
+
+async function initGaveModule() {
+  logStatus('Module Gave : récupération des données...', 'pending');
+  const spxRaw = await fetchTicker('spx', logStatus);
+  if (!spxRaw) {
+    logStatus('Module Gave : impossible sans les données S&P 500.', 'err');
+    return;
+  }
+  const spxForGave = spxRaw.map((c) => [c.date, c.close]);
+  const result = await runGaveAnalysis(spxForGave, logStatus);
+  renderGaveModule(result);
+}
+
+// --------------------------------------------------------------
 // Initialisation
 // --------------------------------------------------------------
 renderWeightsConfig();
 renderParamsConfig();
 renderHistory();
 logStatus('Application prête. Clique sur "Lancer le calcul de la semaine" pour commencer.', 'pending');
+initGaveModule();
 
 // --------------------------------------------------------------
 // Enregistrement du Service Worker (fonctionnement hors-ligne de l'app shell)
