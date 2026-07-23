@@ -26,6 +26,7 @@ async function handlePrices(request, url) {
   const ticker = url.searchParams.get('ticker');
   const interval = url.searchParams.get('interval') || 'w';
   const forceSource = url.searchParams.get('source'); // 'yahoo' pour forcer le fallback directement
+  const range = url.searchParams.get('range') || '10y'; // ex: '10y', 'max' — inchangé par défaut
 
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -42,7 +43,7 @@ async function handlePrices(request, url) {
   }
 
   if (forceSource === 'yahoo') {
-    return fetchFromYahoo(ticker, interval, corsHeaders);
+    return fetchFromYahoo(ticker, interval, range, corsHeaders);
   }
 
   // --- Tentative 1 : Stooq (source principale) ---
@@ -63,7 +64,7 @@ async function handlePrices(request, url) {
   } catch (errStooq) {
     // --- Tentative 2 : Yahoo Finance (fallback) ---
     try {
-      return await fetchFromYahoo(ticker, interval, corsHeaders);
+      return await fetchFromYahoo(ticker, interval, range, corsHeaders);
     } catch (errYahoo) {
       return jsonResponse({
         error: 'Échec de récupération des données (Stooq et Yahoo indisponibles)',
@@ -76,10 +77,10 @@ async function handlePrices(request, url) {
   }
 }
 
-async function fetchFromYahoo(ticker, interval, corsHeaders) {
+async function fetchFromYahoo(ticker, interval, range, corsHeaders) {
   const yahooTicker = mapTickerToYahoo(ticker);
-  const yInterval = interval === 'w' ? '1wk' : '1d';
-  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}?range=10y&interval=${yInterval}`;
+  const yInterval = interval === 'mo' ? '1mo' : interval === 'w' ? '1wk' : '1d';
+  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooTicker}?range=${encodeURIComponent(range)}&interval=${yInterval}`;
   const res = await fetch(yahooUrl, {
     headers: {
       'User-Agent': 'Mozilla/5.0 (compatible; MarketRegimeApp/1.0)',
@@ -89,7 +90,7 @@ async function fetchFromYahoo(ticker, interval, corsHeaders) {
   const json = await res.json();
   const data = parseYahooChart(json);
   if (data.length > 0) {
-    return jsonResponse({ source: 'yahoo', ticker, interval, count: data.length, data }, corsHeaders);
+    return jsonResponse({ source: 'yahoo', ticker, interval, range, count: data.length, data }, corsHeaders);
   }
   throw new Error('Réponse Yahoo invalide ou vide');
 }
