@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Régime de marché — S&P 500 (Weekly)</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#12141a">
+<style>
+  :root {
+    --bg: #12141a;
+    --panel: #191c24;
+    --panel-2: #1f2330;
+    --border: #2b2f3d;
+    --text: #e8e6e0;
+    --text-muted: #8b8f9c;
+    --gold: #c9a15a;
+    --green: #4f9d69;
+    --red: #c0524a;
+    --amber: #c98a3f;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-data: "SF Mono", "JetBrains Mono", "Courier New", monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 24px 20px 80px;
+    line-height: 1.5;
+  }
+
+  header.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+  }
+  header.app-header h1 {
+    font-size: 1.3rem;
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+  header.app-header .subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 4px 0 0;
+    width: 100%;
+  }
+  header.app-header .last-update {
+    font-family: var(--font-data);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .ethics-banner {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--amber);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 24px;
+  }
+  .ethics-banner strong { color: var(--text); }
+
+  section { margin-bottom: 28px; }
+  h2 {
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+
+  /* --- Score global : élément signature ---
+     Hiérarchie visuelle volontairement inversée par rapport à une v1 qui
+     mettait le chiffre en avant : le test de monotonie (session du
+     2026-07-21) a montré que seule la zone <35 porte un signal validé —
+     un chiffre précis à la décimale suggère une granularité que les
+     données ne supportent pas au-dessus de ce seuil. Le libellé qualitatif
+     (bande) est donc l'élément dominant ; le chiffre reste affiché par
+     transparence sur le calcul, mais en retrait, arrondi à l'entier. */
+  .score-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .score-dial { flex-shrink: 0; }
+  .score-label {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.15;
+    max-width: 260px;
+  }
+  .score-number {
+    font-family: var(--font-data);
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 8px;
+    color: var(--text-muted);
+  }
+  .score-number .value { color: inherit; font-weight: 600; }
+  .score-caveat {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-top: 8px;
+    max-width: 320px;
+  }
+
+  .score-disclaimer {
+    width: 100%;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .score-disclaimer strong { color: var(--text); }
+  .score-disclaimer .zone-active {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: var(--panel-2);
+    border-left: 3px solid var(--amber);
+    color: var(--text);
+    font-size: 0.78rem;
+  }
+
+  .level-very-favorable { color: var(--green); }
+  .level-favorable { color: var(--green); }
+  .level-neutral { color: var(--gold); }
+  .level-caution { color: var(--amber); }
+  .level-unfavorable { color: var(--red); }
+
+  /* --- Jauges des piliers --- */
+  .pillars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .pillar-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .pillar-card .pillar-name {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: flex;
+    justify-content: space-between;
+  }
+  .pillar-card .pillar-weight {
+    font-family: var(--font-data);
+  }
+  .pillar-card .pillar-score {
+    font-family: var(--font-data);
+    font-size: 1.6rem;
+    margin: 6px 0 8px;
+  }
+
+  /* --- Accordéon d'explication par pilier --- */
+  .pillar-card { cursor: pointer; }
+  .pillar-toggle-hint {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pillar-toggle-hint .chevron { transition: transform 0.15s ease; display: inline-block; }
+  .pillar-card.open .pillar-toggle-hint .chevron { transform: rotate(90deg); }
+  .pillar-detail {
+    display: none;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    cursor: default;
+  }
+  .pillar-card.open .pillar-detail { display: block; }
+  .pillar-detail .detail-summary {
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  .pillar-detail .detail-summary strong { color: var(--gold); }
+  .note-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.76rem;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--border);
+    gap: 10px;
+  }
+  .note-row:last-child { border-bottom: none; }
+  .note-row .note-label { color: var(--text-muted); flex: 1; }
+  .note-row .note-value { font-family: var(--font-data); color: var(--text); white-space: nowrap; }
+  .note-row .note-delta { font-family: var(--font-data); white-space: nowrap; font-size: 0.72rem; }
+  .note-delta.up { color: var(--green); }
+  .note-delta.down { color: var(--red); }
+  .note-delta.flat { color: var(--text-muted); }
+  .note-explain {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    line-height: 1.5;
+    font-style: italic;
+  }
+  .gauge-track {
+    height: 6px;
+    background: var(--panel-2);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+  }
+
+  /* --- Chandelier (badge informatif, hors score) --- */
+  .candlestick-badge {
+    background: var(--panel-2);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+  }
+  .candlestick-badge .cs-name { font-weight: 600; color: var(--gold); }
+  .candlestick-badge .cs-desc { color: var(--text-muted); font-size: 0.8rem; }
+  .candlestick-badge .cs-note {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 4px;
+    flex-basis: 100%;
+  }
+
+  /* --- Boutons --- */
+  button {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: var(--font-ui);
+  }
+  button:hover { border-color: var(--gold); }
+  button.primary {
+    background: var(--gold);
+    color: #1a1508;
+    border-color: var(--gold);
+    font-weight: 600;
+  }
+  button.primary:hover { opacity: 0.9; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+
+  /* --- Console de statuts --- */
+  .status-console {
+    background: #0d0f14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--font-data);
+    font-size: 0.78rem;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+  .status-line { padding: 2px 0; }
+  .status-line.ok { color: var(--green); }
+  .status-line.err { color: var(--red); }
+  .status-line.pending { color: var(--text-muted); }
+
+  /* --- Panneau de configuration --- */
+  details.config-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  details.config-panel summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+  .config-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .config-field label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+  .config-field input {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 8px;
+    border-radius: 4px;
+    font-family: var(--font-data);
+  }
+  .config-note {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 12px;
+  }
+  .weights-total {
+    font-family: var(--font-data);
+    font-size: 0.8rem;
+    margin-top: 8px;
+  }
+  .weights-total.invalid { color: var(--red); }
+  .weights-total.valid { color: var(--green); }
+
+  /* --- Historique --- */
+  table.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+  table.history-table th, table.history-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 8px 6px;
+    text-align: right;
+  }
+  table.history-table th:first-child, table.history-table td:first-child {
+    text-align: left;
+    font-family: var(--font-data);
+  }
+  table.history-table td.score-cell { font-family: var(--font-data); font-weight: 600; }
+  table.history-table td.perf-positive { color: var(--green); }
+  table.history-table td.perf-negative { color: var(--red); }
+  table.history-table td.perf-pending { color: var(--text-muted); font-style: italic; }
+
+  .empty-state {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding: 20px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+  }
+
+  footer.app-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+
+  /* ============================================================
+     MODULE 2 — CADRAN MACRO (Gave) : séparateur de page + styles
+     ============================================================ */
+  .page-divider {
+    margin: 56px 0 32px;
+    text-align: center;
+    position: relative;
+  }
+  .page-divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--border);
+  }
+  .page-divider span {
+    position: relative;
+    background: var(--bg);
+    padding: 0 16px;
+    font-family: var(--font-data);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+
+  .module-header { margin-bottom: 20px; }
+  .module-header h1 {
+    font-size: 1.15rem;
+    margin: 0 0 4px;
+  }
+  .module-header .subtitle {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+  }
+
+  .quadrant-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px 18px 32px;
+  }
+  .quadrant-grid {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    margin: 0 auto;
+    aspect-ratio: 1 / 1;
+    border-left: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .axis-line { position: absolute; background: var(--border); }
+  .axis-h { top: 50%; left: 0; right: 0; height: 1px; }
+  .axis-v { left: 50%; top: 0; bottom: 0; width: 1px; }
+  .quad-label {
+    position: absolute;
+    font-size: 0.68rem;
+    line-height: 1.4;
+    color: var(--text-muted);
+    max-width: 46%;
+  }
+  .quad-label .asset {
+    display: block;
+    font-family: var(--font-data);
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+  .q-tr { top: 6%; right: 4%; text-align: right; }
+  .q-tr .asset { color: var(--gold); }
+  .q-tl { top: 6%; left: 4%; }
+  .q-br { bottom: 6%; right: 4%; text-align: right; }
+  .q-br .asset { color: var(--green); }
+  .q-bl { bottom: 6%; left: 4%; }
+  .q-bl .asset { color: #6b8fb8; }
+  .marker {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, 50%);
+  }
+  .marker::before, .marker::after { content: ''; position: absolute; background: var(--gold); }
+  .marker::before { width: 14px; height: 2px; top: 6px; left: 0; }
+  .marker::after { width: 2px; height: 14px; left: 6px; top: 0; }
+  .marker-glow {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,161,90,0.35) 0%, transparent 70%);
+    transform: translate(-50%, 50%);
+  }
+  .axis-caption {
+    position: absolute;
+    font-family: var(--font-data);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .cap-right { right: -8px; top: 50%; transform: translateY(-50%); text-align: right; }
+  .cap-top { top: -20px; left: 50%; transform: translateX(-50%); }
+
+  .quadrant-readout {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 20px;
+    font-family: var(--font-data);
+    font-size: 0.78rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .quadrant-readout div { color: var(--text-muted); text-align: center; }
+  .quadrant-readout span { color: var(--text); font-weight: 600; display: block; margin-top: 2px; }
+
+  .gave-cards { display: flex; flex-direction: column; gap: 14px; margin-top: 18px; }
+  .gave-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .gave-card .rule-tag {
+    display: inline-block;
+    font-family: var(--font-data);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--panel-2);
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .gave-card h3 { font-size: 0.9rem; margin-bottom: 6px; }
+  .gave-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.55; }
+  .gave-card p + p { margin-top: 6px; }
+  .gave-card .highlight { color: var(--text); }
+  .gave-card.alert { border-left: 3px solid var(--red); }
+
+  /* --- Encadré : mode d'emploi des deux outils --- */
+  .usage-box {
+    margin-top: 36px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--gold);
+    border-radius: 6px;
+    padding: 20px 22px;
+  }
+  .usage-box h2 {
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  .usage-step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .usage-step:last-child { margin-bottom: 0; }
+  .usage-step .step-num {
+    font-family: var(--font-data);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--gold);
+    flex-shrink: 0;
+    width: 22px;
+  }
+  .usage-step .step-body h3 {
+    font-size: 0.88rem;
+    margin-bottom: 4px;
+  }
+  .usage-step .step-body p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .usage-step .step-body .tool-name {
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>Régime de marché — S&amp;P 500</h1>
+  <span class="last-update" id="last-update">Aucun calcul effectué</span>
+  <p class="subtitle">Lecture hebdomadaire du contexte de marché — outil d'aide à la décision, pas un signal de trading.</p>
+</header>
+
+<div class="ethics-banner">
+  <strong>Ce que cet outil n'est pas :</strong> ni un système de trading automatique, ni un conseil financier, ni une prédiction.
+  Le score représente une estimation du contexte de marché à partir de données publiques, avec des pondérations non calibrées tant que le module de validation (ci-dessous) n'a pas accumulé assez d'historique. Aucune garantie de performance.
+</div>
+
+<section>
+  <h2>Score global</h2>
+  <div class="score-panel" id="score-panel">
+    <div class="empty-state" style="width:100%;">Lance un calcul pour voir le score de la semaine.</div>
+  </div>
+</section>
+
+<section>
+  <h2>Détail par pilier</h2>
+  <div class="pillars-grid" id="pillars-grid">
+    <div class="empty-state" style="grid-column: 1/-1;">—</div>
+  </div>
+</section>
+
+<section id="candlestick-section" style="display:none;">
+  <h2>Bougie de la semaine (information contextuelle)</h2>
+  <div class="candlestick-badge" id="candlestick-badge"></div>
+</section>
+
+<section>
+  <div class="btn-row">
+    <button class="primary" id="btn-calculate">Lancer le calcul de la semaine</button>
+    <button id="btn-export">Exporter l'historique (JSON)</button>
+    <button id="btn-import-trigger">Importer l'historique (JSON)</button>
+    <input type="file" id="btn-import-file" accept="application/json" style="display:none;">
+  </div>
+  <div class="status-console" id="status-console">
+    <div class="status-line pending">En attente d'un calcul...</div>
+  </div>
+</section>
+
+<section>
+  <details class="config-panel">
+    <summary>Configuration (pondérations et paramètres des indicateurs)</summary>
+    <div class="config-grid" id="weights-config"></div>
+    <div class="weights-total" id="weights-total"></div>
+    <div class="config-grid" id="params-config" style="margin-top: 18px;"></div>
+    <p class="config-note">La pondération de départ (25/25/25/25) est neutre et non calibrée — cf. module de validation ci-dessous avant tout ajustement. Les modifications sont sauvegardées automatiquement et appliquées au prochain calcul.</p>
+    <div class="btn-row" style="margin-top:10px;">
+      <button id="btn-reset-defaults">Réinitialiser aux valeurs par défaut</button>
+    </div>
+  </details>
+</section>
+
+<section>
+  <h2>Historique et validation</h2>
+  <p class="config-note" style="margin-bottom:12px;">
+    Comparaison du score obtenu avec la performance réelle du S&amp;P 500 à +1 semaine / +1 mois / +3 mois.
+    Les pondérations ne doivent être réévaluées qu'après accumulation d'un historique suffisant (règle de gouvernance : réévaluation trimestrielle, jamais à l'œil après une seule semaine).
+  </p>
+  <div id="history-container">
+    <div class="empty-state">Aucun historique pour l'instant.</div>
+  </div>
+</section>
+
+<footer class="app-footer">
+  Sources : Stooq (primaire) avec repli automatique sur Yahoo Finance. Calcul basé sur bougies hebdomadaires (clôture vendredi US).
+  La semaine en cours est exclue des calculs tant qu'elle n'est pas clôturée.
+</footer>
+
+<div class="page-divider"><span>Module 2 — Repères macro long terme</span></div>
+
+<div class="module-header">
+  <h1>Où en est le marché dans le cadran de Gave</h1>
+  <div class="subtitle">Deux ratios de prix, chacun comparé à sa propre moyenne mobile à 7 ans — aucune donnée macroéconomique. Mise à jour mensuelle, indépendante du score hebdomadaire ci-dessus. <span id="gave-date" style="font-family: var(--font-data);"></span></div>
+</div>
+
+<section>
+  <div class="quadrant-panel">
+    <div class="quadrant-grid">
+      <div class="axis-line axis-h"></div>
+      <div class="axis-line axis-v"></div>
+      <div class="axis-caption cap-right">+ Croissance</div>
+      <div class="axis-caption cap-top">+ Inflation (Or)</div>
+      <div class="quad-label q-tl">Récession<br>inflationniste<span class="asset">Cash</span></div>
+      <div class="quad-label q-tr">Boom<br>inflationniste<span class="asset">Or</span></div>
+      <div class="quad-label q-bl">Déflation<br>dépression<span class="asset">Obligations</span></div>
+      <div class="quad-label q-br">Boom<br>déflationniste<span class="asset">Actions</span></div>
+      <!-- Position calculée par gave-engine.js : X = écart croissance, Y = écart inflation, cappés à ±100% -->
+      <div class="marker-glow" id="gave-marker-glow" style="left: 65.7%; bottom: 98.4%;"></div>
+      <div class="marker" id="gave-marker" style="left: 65.7%; bottom: 98.4%;"></div>
+    </div>
+    <div class="quadrant-readout" id="gave-readout">
+      <div>Écart Croissance<span id="gave-ecart-croissance">+31.4 %</span></div>
+      <div>Écart Inflation<span id="gave-ecart-inflation">+96.8 %</span></div>
+      <div>Cadran<span id="gave-cadran" style="color:var(--gold)">Boom inflationniste</span></div>
+    </div>
+  </div>
+
+  <div class="gave-cards">
+    <div class="gave-card">
+      <span class="rule-tag">Règle 1 — Or / Obligations</span>
+      <h3>Pourquoi la position est ici</h3>
+      <p>Le ratio <span class="highlight">Or / Obligations US</span> est <span class="highlight" id="gave-detail-inflation">96.8 % au-dessus</span> de sa moyenne mobile à 7 ans (calculée sur 84 mois d'historique). L'or fait significativement mieux que les obligations depuis plusieurs années consécutives, pas seulement sur quelques mois — et ce régime a déjà connu 3 basculements complets (2009-2013 Or, 2014-2020 Obligations, 2021-2026 Or) cohérents avec l'historique de référence.</p>
+      <p>Ce ratio arbitre entre la valeur de rareté (or, protection contre l'érosion monétaire) et la valeur-temps (obligations, pari sur une désinflation). Rester durablement au-dessus de la moyenne signale un régime où la thésaurisation continue d'être récompensée face au prêt à taux fixe.</p>
+    </div>
+
+    <div class="gave-card">
+      <span class="rule-tag">Axe Croissance — Actions / WTI</span>
+      <h3>Ce que dit l'axe horizontal</h3>
+      <p>Le ratio <span class="highlight">Actions (SPY) / pétrole (WTI)</span> est <span class="highlight" id="gave-detail-croissance">31.4 % au-dessus</span> de sa MM7ans. Le prix des actions progresse plus vite que celui de l'énergie — signe que l'activité économique reste solide, pas étranglée par un choc énergétique.</p>
+      <p>Base du raisonnement : l'économie n'est que de l'énergie transformée. Une forte dégradation de ce ratio a historiquement précédé les corrections les plus brutales — ce n'est pas le cas actuellement.</p>
+    </div>
+
+    <div class="gave-card alert">
+      <span class="rule-tag">Règle 2 — Actions / Or (indicateur complémentaire)</span>
+      <h3>Un signal à surveiller, pas encore une alerte</h3>
+      <p>Le ratio <span class="highlight">Actions / Or</span> est repassé <span class="highlight" id="gave-detail-actionsor">sous sa MM7ans (−7.4 %)</span> début 2026, après avoir dominé de 2014 à 2025. Sur 26 ans d'historique, ce ratio a déjà connu ce même type de bascule (2003-2013 en faveur de l'or, 2014-2025 en faveur des actions) — le sens inverse du reste du tableau actuellement.</p>
+      <p>Gave fixe sa limite de patience à <span class="highlight">7 ans</span> avant d'agir sur ce signal seul. Le basculement est trop récent pour en tirer une conclusion — à revoir régulièrement, pas à ignorer.</p>
+    </div>
+
+    <div class="gave-card">
+      <p class="config-note" style="margin-top:0;">Moyennes mobiles à 7 ans (84 mois), calculables depuis juillet 2009 (Règle 1) et janvier 2000 (Règle 2) sur cet historique étendu — contre juillet 2023 seulement dans une version antérieure de ce module. Ce module décrit un cadre de lecture macro-économique, pas une recommandation d'investissement personnalisée.</p>
+    </div>
+  </div>
+</section>
+
+<div class="usage-box">
+  <h2>Comment utiliser les deux outils ensemble</h2>
+
+  <div class="usage-step">
+    <span class="step-num">1</span>
+    <div class="step-body">
+      <span class="tool-name">Cadran macro (ci-dessus)</span>
+      <h3>Fixer le cap général, une fois par mois</h3>
+      <p>Commencez toujours ici. Ce cadran change lentement (les moyennes portent sur 7 ans) — il répond à une question de fond : sommes-nous dans un régime plutôt favorable aux valeurs de rareté (or) ou aux valeurs d'efficacité (actions) ? C'est ce cadre qui doit orienter la répartition générale de votre épargne, pas l'inverse.</p>
+    </div>
+  </div>
+
+  <div class="usage-step">
+    <span class="step-num">2</span>
+    <div class="step-body">
+      <span class="tool-name">Score hebdomadaire (module 1, en haut de page)</span>
+      <h3>Affiner le contexte à court terme, chaque semaine</h3>
+      <p>Une fois le cap fixé par le cadran macro, le score hebdomadaire donne une lecture plus fine du contexte immédiat du marché actions (tendance, momentum, volatilité, concentration). Il aide à situer le climat de la semaine à l'intérieur du régime déjà identifié — il ne le remet pas en cause.</p>
+    </div>
+  </div>
+
+  <div class="usage-step">
+    <span class="step-num">3</span>
+    <div class="step-body">
+      <span class="tool-name">En cas de désaccord entre les deux</span>
+      <h3>Le cadran macro prime, sauf signal de rupture confirmé</h3>
+      <p>Si le score hebdomadaire se dégrade fortement alors que le cadran macro reste stable, il s'agit probablement d'une fluctuation normale à court terme — pas d'un changement de régime. Un vrai changement de cap se lit dans le cadran macro lui-même (un ratio qui repasse sous sa MM7ans), pas dans une mauvaise semaine du score court terme.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="app-footer" style="margin-top:32px;">
+  Cadran macro : sources GLD, TLT (ajusté), SPY (ajusté), WTI continu — via Yahoo Finance (repli du proxy Stooq/Yahoo existant).
+  Aucune de ces deux sections ne constitue un conseil en investissement personnalisé.
+</footer>
+
+<script>
+// ============================================================
+// MOTEUR DE CALCUL (testé isolément — voir suite de tests dédiée)
+// ============================================================
+</script>
+<script id="calc-engine-inline">
+// ============================================================
+// Moteur de calcul — indicateurs techniques (JS pur, sans dépendance)
+// Toutes les fonctions prennent un tableau de bougies OHLC triées par date croissante :
+// [{ date, open, high, low, close, volume }, ...]
+// ============================================================
+
+/**
+ * Exclut la dernière bougie si elle correspond à une semaine en cours (incomplète).
+ * Règle : on ne calcule qu'après clôture hebdomadaire (vendredi soir US).
+ * Heuristique : si la dernière bougie a une date dans les 6 derniers jours ET
+ * qu'on n'est pas samedi/dimanche (jours où la semaine précédente est bien clôturée),
+ * on considère la semaine en cours comme incomplète et on l'exclut.
+ */
+function excludeCurrentIncompleteWeek(candles, now = new Date()) {
+  if (candles.length === 0) return candles;
+  const last = candles[candles.length - 1];
+  const lastDate = new Date(last.date + 'T00:00:00Z');
+
+  // Jour de la semaine côté UTC : 0 = dimanche, 6 = samedi
+  const dayOfWeek = now.getUTCDay();
+  // On ne considère les données comme "à jour de la semaine" que le samedi/dimanche
+  const weekIsClosed = dayOfWeek === 0 || dayOfWeek === 6;
+
+  const diffDays = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
+
+  if (!weekIsClosed && diffDays < 7) {
+    // La dernière bougie appartient probablement à la semaine en cours, non close
+    return candles.slice(0, -1);
+  }
+  return candles;
+}
+
+/**
+ * Moyenne Mobile Exponentielle (EMA)
+ * @param {number[]} values - série de valeurs (ex: clôtures)
+ * @param {number} period - période de l'EMA
+ * @returns {number[]} série d'EMA, alignée sur `values` (NaN tant que non calculable)
+ */
+function calculateEMA(values, period) {
+  const result = new Array(values.length).fill(NaN);
+  if (values.length < period) return result;
+
+  const k = 2 / (period + 1);
+
+  // Amorçage : SMA des `period` premières valeurs
+  let sma = 0;
+  for (let i = 0; i < period; i++) sma += values[i];
+  sma /= period;
+  result[period - 1] = sma;
+
+  for (let i = period; i < values.length; i++) {
+    result[i] = values[i] * k + result[i - 1] * (1 - k);
+  }
+  return result;
+}
+
+/**
+ * RSI (Relative Strength Index), méthode de Wilder
+ * @param {number[]} closes
+ * @param {number} period
+ * @returns {number[]} série de RSI (0-100), NaN tant que non calculable
+ */
+function calculateRSI(closes, period = 14) {
+  const result = new Array(closes.length).fill(NaN);
+  if (closes.length < period + 1) return result;
+
+  let gains = 0;
+  let losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const diff = closes[i] - closes[i - 1];
+    if (diff >= 0) gains += diff;
+    else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+
+  result[period] = computeRsiFromAvg(avgGain, avgLoss);
+
+  for (let i = period + 1; i < closes.length; i++) {
+    const diff = closes[i] - closes[i - 1];
+    const gain = diff > 0 ? diff : 0;
+    const loss = diff < 0 ? -diff : 0;
+
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+
+    result[i] = computeRsiFromAvg(avgGain, avgLoss);
+  }
+  return result;
+}
+
+function computeRsiFromAvg(avgGain, avgLoss) {
+  if (avgLoss === 0) return 100;
+  const rs = avgGain / avgLoss;
+  return 100 - 100 / (1 + rs);
+}
+
+/**
+ * MACD (12, 26, 9) par défaut
+ * @returns {{ macd: number[], signal: number[], histogram: number[] }}
+ */
+function calculateMACD(closes, fastPeriod = 12, slowPeriod = 26, signalPeriod = 9) {
+  const emaFast = calculateEMA(closes, fastPeriod);
+  const emaSlow = calculateEMA(closes, slowPeriod);
+
+  const macdLine = closes.map((_, i) => {
+    if (Number.isNaN(emaFast[i]) || Number.isNaN(emaSlow[i])) return NaN;
+    return emaFast[i] - emaSlow[i];
+  });
+
+  // La ligne de signal est une EMA de la ligne MACD, calculée uniquement
+  // sur la portion de macdLine où elle est définie (pas de NaN).
+  const firstValidIndex = macdLine.findIndex((v) => !Number.isNaN(v));
+  const signalLine = new Array(closes.length).fill(NaN);
+
+  if (firstValidIndex !== -1) {
+    const validMacd = macdLine.slice(firstValidIndex);
+    const emaOfMacd = calculateEMA(validMacd, signalPeriod);
+    for (let i = 0; i < emaOfMacd.length; i++) {
+      signalLine[firstValidIndex + i] = emaOfMacd[i];
+    }
+  }
+
+  const histogram = closes.map((_, i) => {
+    if (Number.isNaN(macdLine[i]) || Number.isNaN(signalLine[i])) return NaN;
+    return macdLine[i] - signalLine[i];
+  });
+
+  return { macd: macdLine, signal: signalLine, histogram };
+}
+
+/**
+ * ATR (Average True Range), méthode de Wilder
+ * @param {Array<{high:number, low:number, close:number}>} candles
+ * @param {number} period
+ * @returns {number[]}
+ */
+function calculateATR(candles, period = 14) {
+  const result = new Array(candles.length).fill(NaN);
+  if (candles.length < period + 1) return result;
+
+  const trueRanges = new Array(candles.length).fill(NaN);
+  for (let i = 1; i < candles.length; i++) {
+    const { high, low } = candles[i];
+    const prevClose = candles[i - 1].close;
+    trueRanges[i] = Math.max(
+      high - low,
+      Math.abs(high - prevClose),
+      Math.abs(low - prevClose)
+    );
+  }
+
+  // Amorçage : moyenne simple des `period` premiers True Range (indices 1..period)
+  let sum = 0;
+  for (let i = 1; i <= period; i++) sum += trueRanges[i];
+  let atr = sum / period;
+  result[period] = atr;
+
+  for (let i = period + 1; i < candles.length; i++) {
+    atr = (atr * (period - 1) + trueRanges[i]) / period;
+    result[i] = atr;
+  }
+  return result;
+}
+
+/**
+ * Détection de patterns de chandeliers — retourne le pattern détecté sur la
+ * DERNIÈRE bougie du tableau fourni (utilise jusqu'à 3 bougies de contexte).
+ * Couche informative uniquement — ne doit jamais influencer le score (cf. cahier des charges §4bis).
+ */
+function detectCandlestickPattern(candles) {
+  if (candles.length === 0) return null;
+  const c0 = candles[candles.length - 1]; // bougie actuelle
+  const c1 = candles.length >= 2 ? candles[candles.length - 2] : null;
+  const c2 = candles.length >= 3 ? candles[candles.length - 3] : null;
+
+  const body = Math.abs(c0.close - c0.open);
+  const range = c0.high - c0.low;
+  if (range === 0) return null;
+
+  const upperWick = c0.high - Math.max(c0.open, c0.close);
+  const lowerWick = Math.min(c0.open, c0.close) - c0.low;
+  const bodyRatio = body / range;
+
+  // --- Patterns à une bougie ---
+  if (bodyRatio < 0.1) {
+    return { name: 'Doji', description: "Indécision — le marché n'a pas tranché de direction sur la semaine." };
+  }
+
+  if (lowerWick > body * 2 && upperWick < body * 0.5) {
+    const isDowntrend = c1 ? c0.close < c1.close : false;
+    return isDowntrend
+      ? { name: 'Marteau', description: 'Rejet des prix bas — signal potentiel de retournement haussier, à confirmer.' }
+      : { name: 'Marteau inversé (contexte haussier)', description: 'Mèche basse longue hors tendance baissière — signal moins significatif hors contexte.' };
+  }
+
+  if (upperWick > body * 2 && lowerWick < body * 0.5) {
+    const isUptrend = c1 ? c0.close > c1.close : false;
+    return isUptrend
+      ? { name: 'Étoile filante / Pendu', description: 'Rejet des prix hauts — signal potentiel de retournement baissier, à confirmer.' }
+      : { name: 'Mèche haute (contexte baissier)', description: 'Mèche haute longue hors tendance haussière — signal moins significatif hors contexte.' };
+  }
+
+  // --- Patterns à deux bougies ---
+  if (c1) {
+    const c1Body = Math.abs(c1.close - c1.open);
+    const c0Bullish = c0.close > c0.open;
+    const c1Bearish = c1.close < c1.open;
+    const c0Bearish = c0.close < c0.open;
+    const c1Bullish = c1.close > c1.open;
+
+    // Avalement haussier : bougie baissière suivie d'une bougie haussière qui l'englobe
+    if (c1Bearish && c0Bullish && c0.open <= c1.close && c0.close >= c1.open && body > c1Body) {
+      return { name: 'Avalement haussier', description: 'La bougie haussière englobe totalement la bougie baissière précédente — momentum acheteur fort.' };
+    }
+    // Avalement baissier
+    if (c1Bullish && c0Bearish && c0.open >= c1.close && c0.close <= c1.open && body > c1Body) {
+      return { name: 'Avalement baissier', description: 'La bougie baissière englobe totalement la bougie haussière précédente — momentum vendeur fort.' };
+    }
+    // Harami (contraire de l'avalement : la bougie actuelle est contenue dans la précédente)
+    if (body < c1Body && c0.open <= Math.max(c1.open, c1.close) && c0.close >= Math.min(c1.open, c1.close)
+        && c0.high <= Math.max(c1.open, c1.close) + 0.0001 && c0.low >= Math.min(c1.open, c1.close) - 0.0001) {
+      return { name: 'Harami', description: 'Contraction nette de la volatilité après une bougie marquée — indécision, changement de rythme possible.' };
+    }
+  }
+
+  // --- Patterns à trois bougies ---
+  if (c1 && c2) {
+    const c2Bearish = c2.close < c2.open;
+    const c2Bullish = c2.close > c2.open;
+    const c0Bullish = c0.close > c0.open;
+    const c0Bearish = c0.close < c0.open;
+    const c1SmallBody = Math.abs(c1.close - c1.open) < Math.abs(c2.close - c2.open) * 0.5;
+
+    // Étoile du matin : bougie baissière, petite bougie (indécision), bougie haussière qui referme dans le corps de la 1ère
+    if (c2Bearish && c1SmallBody && c0Bullish && c0.close > (c2.open + c2.close) / 2) {
+      return { name: 'Étoile du matin', description: 'Séquence de retournement haussier sur trois semaines — épuisement vendeur suivi d’un retour acheteur.' };
+    }
+    // Étoile du soir
+    if (c2Bullish && c1SmallBody && c0Bearish && c0.close < (c2.open + c2.close) / 2) {
+      return { name: 'Étoile du soir', description: 'Séquence de retournement baissier sur trois semaines — épuisement acheteur suivi d’un retour vendeur.' };
+    }
+    // Trois soldats blancs
+    if (c2Bullish && (c1.close > c1.open) && c0Bullish
+        && c1.close > c2.close && c0.close > c1.close) {
+      return { name: 'Trois soldats blancs', description: 'Trois semaines consécutives de hausse avec clôtures croissantes — tendance haussière soutenue.' };
+    }
+    // Trois corbeaux noirs
+    if (c2Bearish && (c1.close < c1.open) && c0Bearish
+        && c1.close < c2.close && c0.close < c1.close) {
+      return { name: 'Trois corbeaux noirs', description: 'Trois semaines consécutives de baisse avec clôtures décroissantes — tendance baissière soutenue.' };
+    }
+  }
+
+  return null; // aucun pattern reconnu
+}
+
+</script>
+<script id="score-engine-inline">
+// ============================================================
+// Moteur de score — agrégation des 4 piliers en score normalisé sur 100
+// Chaque sous-indicateur retourne une note de -2 à +2, moyennée par pilier,
+// puis convertie en 0-100. Les piliers sont ensuite combinés selon leur poids.
+// ============================================================
+
+/**
+ * Convertit une note brute [-2, +2] en sous-score [0, 100]
+ */
+function noteToSubscore(note) {
+  const clamped = Math.max(-2, Math.min(2, note));
+  return ((clamped + 2) / 4) * 100;
+}
+
+/**
+ * Pilier Tendance : écart/pente EMA21-EMA50, position du prix
+ * @param {object} params
+ * @param {number} params.close - dernière clôture
+ * @param {number} params.ema21
+ * @param {number} params.ema50
+ * @param {number} params.ema21Prev - EMA21 de la semaine précédente (pour la pente)
+ * @returns {{ score: number, notes: object }}
+ */
+function scoreTendance({ close, ema21, ema50, ema21Prev }) {
+  const notes = {};
+
+  // Note 1 : position du prix par rapport à l'EMA21
+  const distEma21Pct = ((close - ema21) / ema21) * 100;
+  notes.prixVsEma21 = clampNote(distEma21Pct / 2); // ±4% -> note pleine
+
+  // Note 2 : position de l'EMA21 par rapport à l'EMA50 (tendance de fond)
+  const distEma21Ema50Pct = ((ema21 - ema50) / ema50) * 100;
+  notes.ema21VsEma50 = clampNote(distEma21Ema50Pct / 3); // ±6% -> note pleine
+
+  // Note 3 : pente de l'EMA21 (momentum de la tendance elle-même)
+  const penteEma21Pct = ((ema21 - ema21Prev) / ema21Prev) * 100;
+  notes.penteEma21 = clampNote(penteEma21Pct * 4); // ±0.5%/semaine -> note pleine
+
+  const noteMoyenne = average(Object.values(notes));
+  return { score: noteToSubscore(noteMoyenne), notes };
+}
+
+/**
+ * Pilier Momentum : RSI, MACD
+ */
+function scoreMomentum({ rsi, macdHistogram, macdHistogramPrev }) {
+  const notes = {};
+
+  // Note 1 : RSI — zone de force (>50 favorable en Weekly trend-following, cf cahier des charges)
+  notes.rsi = clampNote((rsi - 50) / 15); // RSI 50->note 0, RSI 80->note 2, RSI 20->note -2
+
+  // Note 2 : histogramme MACD — positif = momentum haussier
+  notes.macdNiveau = clampNote(macdHistogram * 8);
+
+  // Note 3 : accélération de l'histogramme MACD
+  const accel = macdHistogram - macdHistogramPrev;
+  notes.macdAcceleration = clampNote(accel * 15);
+
+  const noteMoyenne = average(Object.values(notes));
+  return { score: noteToSubscore(noteMoyenne), notes };
+}
+
+/**
+ * Pilier Volatilité : VIX, ATR
+ * Note : ici un score ÉLEVÉ = favorable = volatilité CONTENUE (logique inversée)
+ */
+function scoreVolatilite({ vix, atrPct }) {
+  const notes = {};
+
+  // Note VIX : < 15 favorable, 15-25 neutre, > 25 défavorable
+  let noteVix;
+  if (vix < 15) noteVix = 2;
+  else if (vix < 20) noteVix = 1;
+  else if (vix < 25) noteVix = 0;
+  else if (vix < 30) noteVix = -1;
+  else noteVix = -2;
+  notes.vix = noteVix;
+
+  // Note ATR relatif (ATR en % du prix) : plus l'ATR% est élevé, plus le marché est nerveux
+  // atrPct attendu autour de 1.5-2.5% en semaine calme, >4% en semaine agitée
+  notes.atr = clampNote((2.5 - atrPct) / 1.5);
+
+  const noteMoyenne = average(Object.values(notes));
+  return { score: noteToSubscore(noteMoyenne), notes };
+}
+
+/**
+ * Pilier Concentration du marché : ratio SPY/RSP
+ * Note : une HAUSSE du ratio = concentration croissante = signal de fragilité (défavorable)
+ */
+function scoreConcentration({ ratioSpyRsp, ratioSpyRspMA }) {
+  const notes = {};
+
+  // Écart du ratio actuel par rapport à sa moyenne mobile récente
+  const ecartPct = ((ratioSpyRsp - ratioSpyRspMA) / ratioSpyRspMA) * 100;
+  // Un ratio qui s'envole au-dessus de sa moyenne = concentration qui s'accélère = défavorable
+  notes.ecartRatio = clampNote(-ecartPct * 3);
+
+  const noteMoyenne = average(Object.values(notes));
+  return { score: noteToSubscore(noteMoyenne), notes };
+}
+
+/**
+ * Calcule le score global pondéré à partir des 4 sous-scores de piliers
+ * @param {object} pillars - { tendance, momentum, volatilite, concentration } chacun {score, notes}
+ * @param {object} weights - { tendance, momentum, volatilite, concentration } en % (somme = 100)
+ * @returns {{ globalScore: number, pillars: object, weights: object }}
+ */
+function calculateGlobalScore(pillars, weights) {
+  const totalWeight = weights.tendance + weights.momentum + weights.volatilite + weights.concentration;
+
+  // Normalisation défensive si les poids ne totalisent pas exactement 100
+  const norm = (w) => (w / totalWeight) * 100;
+
+  const globalScore =
+    pillars.tendance.score * (norm(weights.tendance) / 100) +
+    pillars.momentum.score * (norm(weights.momentum) / 100) +
+    pillars.volatilite.score * (norm(weights.volatilite) / 100) +
+    pillars.concentration.score * (norm(weights.concentration) / 100);
+
+  return {
+    globalScore: Math.round(globalScore * 10) / 10,
+    pillars,
+    weights,
+  };
+}
+
+/**
+ * Interprétation textuelle du score global, conforme au cahier des charges §7
+ */
+function interpretScore(globalScore) {
+  if (globalScore >= 95) return { label: 'Contexte très favorable', level: 'very-favorable' };
+  if (globalScore >= 80) return { label: 'Contexte favorable', level: 'favorable' };
+  if (globalScore >= 60) return { label: 'Contexte neutre', level: 'neutral' };
+  if (globalScore >= 40) return { label: 'Vigilance', level: 'caution' };
+  return { label: 'Contexte défavorable', level: 'unfavorable' };
+}
+
+// --------------------------------------------------------------
+// Utilitaires
+// --------------------------------------------------------------
+
+function clampNote(n) {
+  if (Number.isNaN(n)) return 0;
+  return Math.max(-2, Math.min(2, n));
+}
+
+function average(arr) {
+  const valid = arr.filter((v) => !Number.isNaN(v));
+  if (valid.length === 0) return 0;
+  return valid.reduce((a, b) => a + b, 0) / valid.length;
+}
+</script>
+<script id="gave-seed-data-inline">
+// ============================================================
+// GAVE-SEED-DATA — historique statique embarqué, nécessaire car
+// certaines sources ne sont pas fetchables en direct par l'app :
+//
+// - Or (1990-01 -> 2004-11) : source INSEE ("Cours des matières
+//   premières importées - Or - Prix au comptant, fixing de
+//   l'après-midi", idBank 010002061), rebasé en équivalent GLD
+//   (facteur = GLD(2004-12) / INSEE(2004-12) = 0.09907260800723817)
+//   pour continuité stricte avec le fetch live GLD à partir de
+//   décembre 2004. Sans ce rebasage, la MM7ans serait faussée sur
+//   les 7 premières années suivant le raccord (unités différentes
+//   dans une même fenêtre glissante).
+// - WTI (1986-01 -> 2026-06) : fichier fourni par l'utilisateur,
+//   486 mois, aucun trou (vérifié). Remplace le fetch Yahoo CL=F
+//   comme socle historique — CL=F en direct comporte des mois
+//   manquants dispersés sur toute sa série. Le fetch live CL=F
+//   continue d'être utilisé UNIQUEMENT pour les mois postérieurs
+//   à ce socle (avec report de la dernière valeur en cas de trou).
+// ============================================================
+
+const GOLD_SEED = [["1990-01-01", 40.6297], ["1990-02-01", 41.2935], ["1990-03-01", 38.9454], ["1990-04-01", 37.073], ["1990-05-01", 36.5677], ["1990-06-01", 34.9033], ["1990-07-01", 35.9138], ["1990-08-01", 39.104], ["1990-09-01", 38.569], ["1990-10-01", 37.7169], ["1990-11-01", 37.816], ["1990-12-01", 37.3405], ["1991-01-01", 38.0043], ["1991-02-01", 36.0426], ["1991-03-01", 35.9931], ["1991-04-01", 35.5076], ["1991-05-01", 35.359], ["1991-06-01", 36.3299], ["1991-07-01", 36.429], ["1991-08-01", 35.2996], ["1991-09-01", 34.5466], ["1991-10-01", 35.5373], ["1991-11-01", 35.686], ["1991-12-01", 35.8346], ["1992-01-01", 35.1113], ["1992-02-01", 35.0618], ["1992-03-01", 34.1107], ["1992-04-01", 33.546], ["1992-05-01", 33.4073], ["1992-06-01", 33.7639], ["1992-07-01", 34.9429], ["1992-08-01", 33.9918], ["1992-09-01", 34.2197], ["1992-10-01", 34.1206], ["1992-11-01", 33.1893], ["1992-12-01", 33.1695], ["1993-01-01", 32.5949], ["1993-02-01", 32.6246], ["1993-03-01", 32.7039], ["1993-04-01", 33.8927], ["1993-05-01", 36.3795], ["1993-06-01", 36.8451], ["1993-07-01", 38.8563], ["1993-08-01", 37.5287], ["1993-09-01", 35.2005], ["1993-10-01", 36.0822], ["1993-11-01", 37.0333], ["1993-12-01", 37.9745], ["1994-01-01", 38.3312], ["1994-02-01", 37.8358], ["1994-03-01", 38.0538], ["1994-04-01", 37.3801], ["1994-05-01", 37.7863], ["1994-06-01", 38.2024], ["1994-07-01", 38.1925], ["1994-08-01", 37.6872], ["1994-09-01", 38.7968], ["1994-10-01", 38.6185], ["1994-11-01", 38.0835], ["1994-12-01", 37.5782], ["1995-01-01", 37.5089], ["1995-02-01", 37.3107], ["1995-03-01", 37.8556], ["1995-04-01", 38.7374], ["1995-05-01", 38.1628], ["1995-06-01", 38.4005], ["1995-07-01", 38.2618], ["1995-08-01", 38.0142], ["1995-09-01", 37.9547], ["1995-10-01", 37.9547], ["1995-11-01", 38.1727], ["1995-12-01", 38.3807], ["1996-01-01", 39.5795], ["1996-02-01", 40.1046], ["1996-03-01", 39.2526], ["1996-04-01", 38.9157], ["1996-05-01", 38.8266], ["1996-06-01", 38.1727], ["1996-07-01", 37.9943], ["1996-08-01", 38.3807], ["1996-09-01", 37.9547], ["1996-10-01", 37.7566], ["1996-11-01", 37.4395], ["1996-12-01", 36.5578], ["1997-01-01", 35.1807], ["1997-02-01", 34.3386], ["1997-03-01", 34.8537], ["1997-04-01", 34.1305], ["1997-05-01", 34.0612], ["1997-06-01", 33.7639], ["1997-07-01", 32.1094], ["1997-08-01", 32.0995], ["1997-09-01", 31.9806], ["1997-10-01", 32.1887], ["1997-11-01", 30.3162], ["1997-12-01", 28.6023], ["1998-01-01", 28.6419], ["1998-02-01", 29.4741], ["1998-03-01", 29.3156], ["1998-04-01", 30.5441], ["1998-05-01", 29.6326], ["1998-06-01", 28.9589], ["1998-07-01", 29.0184], ["1998-08-01", 28.1465], ["1998-09-01", 28.632], ["1998-10-01", 29.3156], ["1998-11-01", 29.1373], ["1998-12-01", 28.8995], ["1999-01-01", 28.4437], ["1999-02-01", 28.4636], ["1999-03-01", 28.3348], ["1999-04-01", 27.9979], ["1999-05-01", 27.3837], ["1999-06-01", 25.8877], ["1999-07-01", 25.3725], ["1999-08-01", 25.4319], ["1999-09-01", 26.2245], ["1999-10-01", 30.7819], ["1999-11-01", 29.0481], ["1999-12-01", 28.0475], ["2000-01-01", 28.1663], ["2000-02-01", 29.7119], ["2000-03-01", 28.3744], ["2000-04-01", 27.7106], ["2000-05-01", 27.2648], ["2000-06-01", 28.305], ["2000-07-01", 27.8988], ["2000-08-01", 27.1954], ["2000-09-01", 27.1162], ["2000-10-01", 26.7496], ["2000-11-01", 26.3533], ["2000-12-01", 26.8883], ["2001-01-01", 26.3038], ["2001-02-01", 25.9471], ["2001-03-01", 26.0561], ["2001-04-01", 25.8084], ["2001-05-01", 26.9874], ["2001-06-01", 26.7694], ["2001-07-01", 26.5019], ["2001-08-01", 26.9874], ["2001-09-01", 28.0772], ["2001-10-01", 28.0475], ["2001-11-01", 27.3639], ["2001-12-01", 27.3242], ["2002-01-01", 27.8889], ["2002-02-01", 29.276], ["2002-03-01", 29.1373], ["2002-04-01", 29.9893], ["2002-05-01", 31.1583], ["2002-06-01", 31.8221], ["2002-07-01", 31.0394], ["2002-08-01", 30.7422], ["2002-09-01", 31.6141], ["2002-10-01", 31.3664], ["2002-11-01", 31.6141], ["2002-12-01", 32.8822], ["2003-01-01", 35.359], ["2003-02-01", 35.5671], ["2003-03-01", 33.7441], ["2003-04-01", 32.5156], ["2003-05-01", 35.2401], ["2003-06-01", 35.3095], ["2003-07-01", 34.7745], ["2003-08-01", 35.6463], ["2003-09-01", 37.5386], ["2003-10-01", 37.5386], ["2003-11-01", 38.6284], ["2003-12-01", 40.3226], ["2004-01-01", 40.9962], ["2004-02-01", 40.1145], ["2004-03-01", 40.2928], ["2004-04-01", 39.956], ["2004-05-01", 38.0241], ["2004-06-01", 38.8761], ["2004-07-01", 39.4408], ["2004-08-01", 39.6786], ["2004-09-01", 40.1541], ["2004-10-01", 41.66], ["2004-11-01", 43.5325]];
+
+const WTI_SEED = [["1986-01-01", 22.93], ["1986-02-01", 15.46], ["1986-03-01", 12.61], ["1986-04-01", 12.84], ["1986-05-01", 15.38], ["1986-06-01", 13.43], ["1986-07-01", 11.59], ["1986-08-01", 15.1], ["1986-09-01", 14.87], ["1986-10-01", 14.9], ["1986-11-01", 15.22], ["1986-12-01", 16.11], ["1987-01-01", 18.65], ["1987-02-01", 17.75], ["1987-03-01", 18.3], ["1987-04-01", 18.68], ["1987-05-01", 19.44], ["1987-06-01", 20.07], ["1987-07-01", 21.34], ["1987-08-01", 20.31], ["1987-09-01", 19.53], ["1987-10-01", 19.86], ["1987-11-01", 18.85], ["1987-12-01", 17.28], ["1988-01-01", 17.13], ["1988-02-01", 16.8], ["1988-03-01", 16.2], ["1988-04-01", 17.86], ["1988-05-01", 17.42], ["1988-06-01", 16.53], ["1988-07-01", 15.5], ["1988-08-01", 15.52], ["1988-09-01", 14.54], ["1988-10-01", 13.77], ["1988-11-01", 14.14], ["1988-12-01", 16.38], ["1989-01-01", 18.02], ["1989-02-01", 17.94], ["1989-03-01", 19.48], ["1989-04-01", 21.07], ["1989-05-01", 20.12], ["1989-06-01", 20.05], ["1989-07-01", 19.78], ["1989-08-01", 18.58], ["1989-09-01", 19.59], ["1989-10-01", 20.1], ["1989-11-01", 19.86], ["1989-12-01", 21.1], ["1990-01-01", 22.86], ["1990-02-01", 22.11], ["1990-03-01", 20.39], ["1990-04-01", 18.43], ["1990-05-01", 18.2], ["1990-06-01", 16.7], ["1990-07-01", 18.45], ["1990-08-01", 27.31], ["1990-09-01", 33.51], ["1990-10-01", 36.04], ["1990-11-01", 32.33], ["1990-12-01", 27.28], ["1991-01-01", 25.23], ["1991-02-01", 20.48], ["1991-03-01", 19.9], ["1991-04-01", 20.83], ["1991-05-01", 21.23], ["1991-06-01", 20.19], ["1991-07-01", 21.4], ["1991-08-01", 21.69], ["1991-09-01", 21.89], ["1991-10-01", 23.23], ["1991-11-01", 22.46], ["1991-12-01", 19.5], ["1992-01-01", 18.79], ["1992-02-01", 19.01], ["1992-03-01", 18.92], ["1992-04-01", 20.23], ["1992-05-01", 20.98], ["1992-06-01", 22.39], ["1992-07-01", 21.78], ["1992-08-01", 21.34], ["1992-09-01", 21.88], ["1992-10-01", 21.69], ["1992-11-01", 20.34], ["1992-12-01", 19.41], ["1993-01-01", 19.03], ["1993-02-01", 20.09], ["1993-03-01", 20.32], ["1993-04-01", 20.25], ["1993-05-01", 19.95], ["1993-06-01", 19.09], ["1993-07-01", 17.89], ["1993-08-01", 18.01], ["1993-09-01", 17.5], ["1993-10-01", 18.15], ["1993-11-01", 16.61], ["1993-12-01", 14.52], ["1994-01-01", 15.03], ["1994-02-01", 14.78], ["1994-03-01", 14.68], ["1994-04-01", 16.42], ["1994-05-01", 17.89], ["1994-06-01", 19.06], ["1994-07-01", 19.66], ["1994-08-01", 18.38], ["1994-09-01", 17.45], ["1994-10-01", 17.72], ["1994-11-01", 18.07], ["1994-12-01", 17.16], ["1995-01-01", 18.04], ["1995-02-01", 18.57], ["1995-03-01", 18.54], ["1995-04-01", 19.9], ["1995-05-01", 19.74], ["1995-06-01", 18.45], ["1995-07-01", 17.33], ["1995-08-01", 18.02], ["1995-09-01", 18.23], ["1995-10-01", 17.43], ["1995-11-01", 17.99], ["1995-12-01", 19.03], ["1996-01-01", 18.86], ["1996-02-01", 19.09], ["1996-03-01", 21.33], ["1996-04-01", 23.5], ["1996-05-01", 21.17], ["1996-06-01", 20.42], ["1996-07-01", 21.3], ["1996-08-01", 21.9], ["1996-09-01", 23.97], ["1996-10-01", 24.88], ["1996-11-01", 23.71], ["1996-12-01", 25.23], ["1997-01-01", 25.13], ["1997-02-01", 22.18], ["1997-03-01", 20.97], ["1997-04-01", 19.7], ["1997-05-01", 20.82], ["1997-06-01", 19.26], ["1997-07-01", 19.66], ["1997-08-01", 19.95], ["1997-09-01", 19.8], ["1997-10-01", 21.33], ["1997-11-01", 20.19], ["1997-12-01", 18.33], ["1998-01-01", 16.72], ["1998-02-01", 16.06], ["1998-03-01", 15.12], ["1998-04-01", 15.35], ["1998-05-01", 14.91], ["1998-06-01", 13.72], ["1998-07-01", 14.17], ["1998-08-01", 13.47], ["1998-09-01", 15.03], ["1998-10-01", 14.46], ["1998-11-01", 13.0], ["1998-12-01", 11.35], ["1999-01-01", 12.52], ["1999-02-01", 12.01], ["1999-03-01", 14.68], ["1999-04-01", 17.31], ["1999-05-01", 17.72], ["1999-06-01", 17.92], ["1999-07-01", 20.1], ["1999-08-01", 21.28], ["1999-09-01", 23.8], ["1999-10-01", 22.69], ["1999-11-01", 25.0], ["1999-12-01", 26.1], ["2000-01-01", 27.26], ["2000-02-01", 29.37], ["2000-03-01", 29.84], ["2000-04-01", 25.72], ["2000-05-01", 28.79], ["2000-06-01", 31.82], ["2000-07-01", 29.7], ["2000-08-01", 31.26], ["2000-09-01", 33.88], ["2000-10-01", 33.11], ["2000-11-01", 34.42], ["2000-12-01", 28.44], ["2001-01-01", 29.59], ["2001-02-01", 29.61], ["2001-03-01", 27.25], ["2001-04-01", 27.49], ["2001-05-01", 28.63], ["2001-06-01", 27.6], ["2001-07-01", 26.43], ["2001-08-01", 27.37], ["2001-09-01", 26.2], ["2001-10-01", 22.17], ["2001-11-01", 19.64], ["2001-12-01", 19.39], ["2002-01-01", 19.72], ["2002-02-01", 20.72], ["2002-03-01", 24.53], ["2002-04-01", 26.18], ["2002-05-01", 27.04], ["2002-06-01", 25.52], ["2002-07-01", 26.97], ["2002-08-01", 28.39], ["2002-09-01", 29.66], ["2002-10-01", 28.84], ["2002-11-01", 26.35], ["2002-12-01", 29.46], ["2003-01-01", 32.95], ["2003-02-01", 35.83], ["2003-03-01", 33.51], ["2003-04-01", 28.17], ["2003-05-01", 28.11], ["2003-06-01", 30.66], ["2003-07-01", 30.76], ["2003-08-01", 31.57], ["2003-09-01", 28.31], ["2003-10-01", 30.34], ["2003-11-01", 31.11], ["2003-12-01", 32.13], ["2004-01-01", 34.31], ["2004-02-01", 34.69], ["2004-03-01", 36.74], ["2004-04-01", 36.75], ["2004-05-01", 40.28], ["2004-06-01", 38.03], ["2004-07-01", 40.78], ["2004-08-01", 44.9], ["2004-09-01", 45.94], ["2004-10-01", 53.28], ["2004-11-01", 48.47], ["2004-12-01", 43.15], ["2005-01-01", 46.84], ["2005-02-01", 48.15], ["2005-03-01", 54.19], ["2005-04-01", 52.98], ["2005-05-01", 49.83], ["2005-06-01", 56.35], ["2005-07-01", 59.0], ["2005-08-01", 64.99], ["2005-09-01", 65.59], ["2005-10-01", 62.26], ["2005-11-01", 58.32], ["2005-12-01", 59.41], ["2006-01-01", 65.49], ["2006-02-01", 61.63], ["2006-03-01", 62.69], ["2006-04-01", 69.44], ["2006-05-01", 70.84], ["2006-06-01", 70.95], ["2006-07-01", 74.41], ["2006-08-01", 73.04], ["2006-09-01", 63.8], ["2006-10-01", 58.89], ["2006-11-01", 59.08], ["2006-12-01", 61.96], ["2007-01-01", 54.51], ["2007-02-01", 59.28], ["2007-03-01", 60.44], ["2007-04-01", 63.98], ["2007-05-01", 63.46], ["2007-06-01", 67.49], ["2007-07-01", 74.12], ["2007-08-01", 72.36], ["2007-09-01", 79.92], ["2007-10-01", 85.8], ["2007-11-01", 94.77], ["2007-12-01", 91.69], ["2008-01-01", 92.97], ["2008-02-01", 95.39], ["2008-03-01", 105.45], ["2008-04-01", 112.58], ["2008-05-01", 125.4], ["2008-06-01", 133.88], ["2008-07-01", 133.37], ["2008-08-01", 116.67], ["2008-09-01", 104.11], ["2008-10-01", 76.61], ["2008-11-01", 57.31], ["2008-12-01", 41.12], ["2009-01-01", 41.71], ["2009-02-01", 39.09], ["2009-03-01", 47.94], ["2009-04-01", 49.65], ["2009-05-01", 59.03], ["2009-06-01", 69.64], ["2009-07-01", 64.15], ["2009-08-01", 71.05], ["2009-09-01", 69.41], ["2009-10-01", 75.72], ["2009-11-01", 77.99], ["2009-12-01", 74.47], ["2010-01-01", 78.33], ["2010-02-01", 76.39], ["2010-03-01", 81.2], ["2010-04-01", 84.29], ["2010-05-01", 73.74], ["2010-06-01", 75.34], ["2010-07-01", 76.32], ["2010-08-01", 76.6], ["2010-09-01", 75.24], ["2010-10-01", 81.89], ["2010-11-01", 84.25], ["2010-12-01", 89.15], ["2011-01-01", 89.17], ["2011-02-01", 88.58], ["2011-03-01", 102.86], ["2011-04-01", 109.53], ["2011-05-01", 100.9], ["2011-06-01", 96.26], ["2011-07-01", 97.3], ["2011-08-01", 86.33], ["2011-09-01", 85.52], ["2011-10-01", 86.32], ["2011-11-01", 97.16], ["2011-12-01", 98.56], ["2012-01-01", 100.27], ["2012-02-01", 102.2], ["2012-03-01", 106.16], ["2012-04-01", 103.32], ["2012-05-01", 94.66], ["2012-06-01", 82.3], ["2012-07-01", 87.9], ["2012-08-01", 94.13], ["2012-09-01", 94.51], ["2012-10-01", 89.49], ["2012-11-01", 86.53], ["2012-12-01", 87.86], ["2013-01-01", 94.76], ["2013-02-01", 95.31], ["2013-03-01", 92.94], ["2013-04-01", 92.02], ["2013-05-01", 94.51], ["2013-06-01", 95.77], ["2013-07-01", 104.67], ["2013-08-01", 106.57], ["2013-09-01", 106.29], ["2013-10-01", 100.54], ["2013-11-01", 93.86], ["2013-12-01", 97.63], ["2014-01-01", 94.62], ["2014-02-01", 100.82], ["2014-03-01", 100.8], ["2014-04-01", 102.07], ["2014-05-01", 102.18], ["2014-06-01", 105.79], ["2014-07-01", 103.59], ["2014-08-01", 96.54], ["2014-09-01", 93.21], ["2014-10-01", 84.4], ["2014-11-01", 75.79], ["2014-12-01", 59.29], ["2015-01-01", 47.22], ["2015-02-01", 50.58], ["2015-03-01", 47.82], ["2015-04-01", 54.45], ["2015-05-01", 59.27], ["2015-06-01", 59.82], ["2015-07-01", 50.9], ["2015-08-01", 42.87], ["2015-09-01", 45.48], ["2015-10-01", 46.22], ["2015-11-01", 42.44], ["2015-12-01", 37.19], ["2016-01-01", 31.68], ["2016-02-01", 30.32], ["2016-03-01", 37.55], ["2016-04-01", 40.75], ["2016-05-01", 46.71], ["2016-06-01", 48.76], ["2016-07-01", 44.65], ["2016-08-01", 44.72], ["2016-09-01", 45.18], ["2016-10-01", 49.78], ["2016-11-01", 45.66], ["2016-12-01", 51.97], ["2017-01-01", 52.5], ["2017-02-01", 53.47], ["2017-03-01", 49.33], ["2017-04-01", 51.06], ["2017-05-01", 48.48], ["2017-06-01", 45.18], ["2017-07-01", 46.63], ["2017-08-01", 48.04], ["2017-09-01", 49.82], ["2017-10-01", 51.58], ["2017-11-01", 56.64], ["2017-12-01", 57.88], ["2018-01-01", 63.7], ["2018-02-01", 62.23], ["2018-03-01", 62.73], ["2018-04-01", 66.25], ["2018-05-01", 69.98], ["2018-06-01", 67.87], ["2018-07-01", 70.98], ["2018-08-01", 68.06], ["2018-09-01", 70.23], ["2018-10-01", 70.75], ["2018-11-01", 56.96], ["2018-12-01", 49.52], ["2019-01-01", 51.38], ["2019-02-01", 54.95], ["2019-03-01", 58.15], ["2019-04-01", 63.86], ["2019-05-01", 60.83], ["2019-06-01", 54.66], ["2019-07-01", 57.35], ["2019-08-01", 54.81], ["2019-09-01", 56.95], ["2019-10-01", 53.96], ["2019-11-01", 57.03], ["2019-12-01", 59.88], ["2020-01-01", 57.52], ["2020-02-01", 50.54], ["2020-03-01", 29.21], ["2020-04-01", 16.55], ["2020-05-01", 28.56], ["2020-06-01", 38.31], ["2020-07-01", 40.71], ["2020-08-01", 42.34], ["2020-09-01", 39.63], ["2020-10-01", 39.4], ["2020-11-01", 40.94], ["2020-12-01", 47.02], ["2021-01-01", 52.0], ["2021-02-01", 59.04], ["2021-03-01", 62.33], ["2021-04-01", 61.72], ["2021-05-01", 65.17], ["2021-06-01", 71.38], ["2021-07-01", 72.49], ["2021-08-01", 67.73], ["2021-09-01", 71.65], ["2021-10-01", 81.48], ["2021-11-01", 79.15], ["2021-12-01", 71.71], ["2022-01-01", 83.22], ["2022-02-01", 91.64], ["2022-03-01", 108.5], ["2022-04-01", 101.78], ["2022-05-01", 109.55], ["2022-06-01", 114.84], ["2022-07-01", 101.62], ["2022-08-01", 93.67], ["2022-09-01", 84.26], ["2022-10-01", 87.55], ["2022-11-01", 84.37], ["2022-12-01", 76.44], ["2023-01-01", 78.12], ["2023-02-01", 76.83], ["2023-03-01", 73.28], ["2023-04-01", 79.45], ["2023-05-01", 71.58], ["2023-06-01", 70.25], ["2023-07-01", 76.07], ["2023-08-01", 81.39], ["2023-09-01", 89.43], ["2023-10-01", 85.64], ["2023-11-01", 77.69], ["2023-12-01", 71.9], ["2024-01-01", 74.15], ["2024-02-01", 77.25], ["2024-03-01", 81.28], ["2024-04-01", 85.35], ["2024-05-01", 80.02], ["2024-06-01", 79.77], ["2024-07-01", 81.8], ["2024-08-01", 76.68], ["2024-09-01", 70.24], ["2024-10-01", 71.99], ["2024-11-01", 69.95], ["2024-12-01", 70.12], ["2025-01-01", 75.74], ["2025-02-01", 71.53], ["2025-03-01", 68.24], ["2025-04-01", 63.54], ["2025-05-01", 62.17], ["2025-06-01", 68.17], ["2025-07-01", 68.39], ["2025-08-01", 64.86], ["2025-09-01", 63.96], ["2025-10-01", 60.89], ["2025-11-01", 60.06], ["2025-12-01", 57.97], ["2026-01-01", 60.04], ["2026-02-01", 64.51], ["2026-03-01", 91.38], ["2026-04-01", 100.32], ["2026-05-01", 102.13], ["2026-06-01", 84.81]];
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { GOLD_SEED, WTI_SEED };
+}
+
+</script>
+<script id="gave-engine-inline">
+// ============================================================
+// GAVE-ENGINE — Cadran macro (Croissance × Inflation)
+// Cadence MENSUELLE (cohérente avec la méthode de Gave — moyennes
+// mobiles à 7 ans pensées pour du mensuel, pas de l'hebdomadaire).
+// Deux ratios de prix, chacun comparé à sa propre moyenne mobile à
+// 7 ans (84 mois). Walk-forward par construction : à l'indice i, la
+// MM7ans ne dépend que des points <= i.
+//
+// Historique : combine un socle statique embarqué (gave-seed-data.js)
+// avec les données récupérées en direct par l'app, pour les séries
+// que Yahoo/Stooq ne couvrent pas assez loin dans le passé (or avant
+// 2004, WTI en continu sans trou). Cf. commentaires de
+// gave-seed-data.js pour la provenance et la méthode de raccord.
+// ============================================================
+
+const MA_WINDOW_MONTHS = 84; // 7 ans
+
+/**
+ * Fusionne un socle statique et une série récupérée en direct.
+ * Le socle prévaut sur toute date qu'il couvre ; le live ne complète
+ * qu'au-delà de la dernière date du socle. En cas de trou dans le
+ * live après la jonction, report de la dernière valeur connue
+ * (forward-fill) plutôt qu'interpolation — convention standard pour
+ * des trous ponctuels sur une moyenne mobile longue.
+ * @param {Array<[string, number]>} seed - trié par date croissante
+ * @param {Array<[string, number]>} live - trié par date croissante
+ * @returns {Map<string, number>}
+ */
+function mergeSeedAndLive(seed, live) {
+  const result = new Map(seed);
+  const lastSeedDate = seed.length > 0 ? seed[seed.length - 1][0] : null;
+  const liveAfterSeed = live.filter(([date]) => !lastSeedDate || date > lastSeedDate);
+
+  if (liveAfterSeed.length === 0) return result;
+
+  // Détecte les mois manquants entre la fin du socle et le premier point live,
+  // et entre points live consécutifs -> report de la dernière valeur connue.
+  let cursor = lastSeedDate ? new Date(lastSeedDate + 'T00:00:00Z') : null;
+  let lastKnownValue = cursor ? result.get(lastSeedDate) : null;
+
+  for (const [date, value] of liveAfterSeed) {
+    if (cursor) {
+      let next = new Date(cursor.getTime());
+      next.setUTCMonth(next.getUTCMonth() + 1);
+      while (next < new Date(date + 'T00:00:00Z')) {
+        const fillDate = next.toISOString().slice(0, 7) + '-01';
+        if (!result.has(fillDate)) result.set(fillDate, lastKnownValue);
+        next.setUTCMonth(next.getUTCMonth() + 1);
+      }
+    }
+    result.set(date, value);
+    cursor = new Date(date + 'T00:00:00Z');
+    lastKnownValue = value;
+  }
+  return result;
+}
+
+/**
+ * Aligne deux séries [date, valeur] sur leurs dates communes et calcule
+ * le ratio a/b pour chaque date commune, trié par date croissante.
+ */
+function buildRatioSeriesFromPairs(seriesA, seriesB) {
+  const mapA = seriesA instanceof Map ? seriesA : new Map(seriesA);
+  const mapB = seriesB instanceof Map ? seriesB : new Map(seriesB);
+  const dates = [...mapA.keys()].filter((d) => mapB.has(d)).sort();
+  return dates.map((date) => ({ date, value: mapA.get(date) / mapB.get(date) }));
+}
+
+/**
+ * Moyenne mobile sur une fenêtre de `windowMonths` points, walk-forward.
+ */
+function movingAverage(series, windowMonths) {
+  const result = new Array(series.length).fill(null);
+  for (let i = 0; i < series.length; i++) {
+    if (i < windowMonths - 1) continue;
+    let sum = 0;
+    for (let j = i - windowMonths + 1; j <= i; j++) sum += series[j].value;
+    result[i] = sum / windowMonths;
+  }
+  return result;
+}
+
+/**
+ * Écart en % entre la dernière valeur d'une série de ratios et sa MM7ans.
+ */
+function lastEcartVsMA(ratioSeries, windowMonths = MA_WINDOW_MONTHS) {
+  const ma = movingAverage(ratioSeries, windowMonths);
+  for (let i = ratioSeries.length - 1; i >= 0; i--) {
+    if (ma[i] !== null) {
+      const ratio = ratioSeries[i].value;
+      return { ecartPct: ((ratio - ma[i]) / ma[i]) * 100, ratio, ma: ma[i], date: ratioSeries[i].date };
+    }
+  }
+  return null;
+}
+
+/**
+ * Détermine le cadran à partir des deux écarts.
+ * X = écart Croissance (Actions/WTI vs MM7ans), Y = écart Inflation (Or/Obligations vs MM7ans).
+ */
+function classifyQuadrant(ecartCroissance, ecartInflation) {
+  const croissanceForte = ecartCroissance > 0;
+  const inflationForte = ecartInflation > 0;
+  if (croissanceForte && inflationForte) return { key: 'boom-inflationniste', label: 'Boom inflationniste', asset: 'Or' };
+  if (!croissanceForte && inflationForte) return { key: 'recession-inflationniste', label: 'Récession inflationniste', asset: 'Cash' };
+  if (croissanceForte && !inflationForte) return { key: 'boom-deflationniste', label: 'Boom déflationniste', asset: 'Actions' };
+  return { key: 'deflation-depression', label: 'Déflation dépression', asset: 'Obligations' };
+}
+
+/**
+ * Calcule l'ensemble des indicateurs du module Gave, en fusionnant les
+ * socles statiques (or, WTI) avec les données récupérées en direct.
+ * @param {object} data
+ * @param {Array} data.gldLive - GLD récupéré en direct [[date, adjClose], ...]
+ * @param {Array} data.tlt - TLT ajusté, récupéré en direct
+ * @param {Array} data.spy - SPY ajusté, récupéré en direct
+ * @param {Array} data.wtiLive - WTI (CL=F) récupéré en direct, peut contenir des trous
+ * @param {object} seedData - { GOLD_SEED, WTI_SEED } importés de gave-seed-data.js
+ */
+function computeGaveIndicators({ gldLive, tlt, spy, wtiLive }, seedData) {
+  const errors = [];
+  const MIN_POINTS = MA_WINDOW_MONTHS + 1;
+
+  if (!gldLive) errors.push('Données Or (GLD) manquantes.');
+  if (!tlt || tlt.length < MIN_POINTS) errors.push('Historique Obligations (TLT) insuffisant pour la MM7ans.');
+  if (!spy || spy.length < MIN_POINTS) errors.push('Historique Actions (SPY) insuffisant pour la MM7ans.');
+  if (!wtiLive) errors.push('Données WTI manquantes.');
+  if (!seedData || !seedData.GOLD_SEED || !seedData.WTI_SEED) errors.push('Socle historique (gave-seed-data.js) manquant.');
+  if (errors.length > 0) return { success: false, errors };
+
+  const gold = mergeSeedAndLive(seedData.GOLD_SEED, gldLive);
+  const wti = mergeSeedAndLive(seedData.WTI_SEED, wtiLive);
+  const tltMap = tlt instanceof Map ? tlt : new Map(tlt);
+  const spyMap = spy instanceof Map ? spy : new Map(spy);
+
+  const ratioOrObligations = buildRatioSeriesFromPairs(gold, tltMap);
+  const ratioActionsOr = buildRatioSeriesFromPairs(spyMap, gold);
+  const ratioCroissance = buildRatioSeriesFromPairs(spyMap, wti);
+
+  const inflation = lastEcartVsMA(ratioOrObligations);
+  const actionsOr = lastEcartVsMA(ratioActionsOr);
+  const croissance = lastEcartVsMA(ratioCroissance);
+
+  if (!inflation || !actionsOr || !croissance) {
+    return { success: false, errors: ["Moins de 7 ans de données communes après alignement des dates — la MM7ans n'est pas encore calculable."] };
+  }
+
+  const quadrant = classifyQuadrant(croissance.ecartPct, inflation.ecartPct);
+
+  return {
+    success: true,
+    errors: [],
+    date: inflation.date,
+    inflation,
+    croissance,
+    actionsOr,
+    quadrant,
+    regle1Signal: inflation.ecartPct > 0 ? 'OR' : 'OBLIGATIONS',
+    regle2Signal: actionsOr.ecartPct > 0 ? 'ACTIONS' : 'OR (alerte)',
+  };
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    MA_WINDOW_MONTHS,
+    mergeSeedAndLive,
+    buildRatioSeriesFromPairs,
+    movingAverage,
+    lastEcartVsMA,
+    classifyQuadrant,
+    computeGaveIndicators,
+  };
+}
+
+</script>
+<script id="app-logic-inline">
+// ============================================================
+// APPLICATION — orchestration
+// Récupère les données, calcule les indicateurs et le score,
+// gère la persistance locale et le module de validation.
+// ============================================================
+
+const TICKERS = {
+  spx: '^spx',
+  spy: 'spy.us',
+  rsp: 'rsp.us',
+  vix: '^vix',
+};
+
+// Module Gave (cadran macro) — cadence MENSUELLE, tickers séparés, sources forcées Yahoo.
+// interval='mo' + range='max' : on récupère tout l'historique disponible ; les données
+// antérieures à ce que Yahoo couvre (or avant 2004, WTI en continu sans trou) proviennent
+// du socle statique gave-seed-data.js, fusionné par gave-engine.js (cf. mergeSeedAndLive).
+const GAVE_TICKERS = {
+  gld: { ticker: 'gld.us', source: 'yahoo' },
+  tlt: { ticker: 'tlt.us', source: 'yahoo' },
+  spy: { ticker: 'spy.us', source: 'yahoo' },
+  wti: { ticker: 'CL=F', source: 'yahoo' }, // symbole Yahoo natif — cl.f n'existe dans aucun mapping
+};
+
+const DEFAULT_PARAMS = {
+  emaFast: 21,
+  emaSlow: 50,
+  rsiPeriod: 14,
+  macdFast: 12,
+  macdSlow: 26,
+  macdSignal: 9,
+  atrPeriod: 14,
+};
+
+const DEFAULT_WEIGHTS = {
+  tendance: 25,
+  momentum: 25,
+  volatilite: 25,
+  concentration: 25,
+};
+
+const STORAGE_KEY_HISTORY = 'marketRegimeHistory_v1';
+const STORAGE_KEY_WEIGHTS = 'marketRegimeWeights_v1';
+const STORAGE_KEY_PARAMS = 'marketRegimeParams_v1';
+
+// --------------------------------------------------------------
+// État applicatif en mémoire
+// --------------------------------------------------------------
+let appState = {
+  weights: loadWeights(),
+  params: loadParams(),
+  lastResult: null,
+  rawData: {},
+};
+
+// --------------------------------------------------------------
+// Récupération des données (avec statut visible)
+// --------------------------------------------------------------
+
+async function fetchTicker(tickerKey, statusCallback) {
+  const ticker = TICKERS[tickerKey];
+  statusCallback(`Récupération de ${tickerKey.toUpperCase()} (${ticker})...`, 'pending');
+  try {
+    const res = await fetch(`/api/prices?ticker=${encodeURIComponent(ticker)}&interval=w`);
+    const json = await res.json();
+    if (!res.ok || json.error) {
+      statusCallback(`Échec ${tickerKey.toUpperCase()} : ${json.error || 'erreur inconnue'}`, 'err');
+      return null;
+    }
+    statusCallback(`${tickerKey.toUpperCase()} OK (source: ${json.source}, ${json.count} bougies)`, 'ok');
+    return json.data;
+  } catch (e) {
+    statusCallback(`Erreur réseau ${tickerKey.toUpperCase()} : ${e.message}`, 'err');
+    return null;
+  }
+}
+
+async function fetchAllData(statusCallback) {
+  const [spx, spy, rsp, vix] = await Promise.all([
+    fetchTicker('spx', statusCallback),
+    fetchTicker('spy', statusCallback),
+    fetchTicker('rsp', statusCallback),
+    fetchTicker('vix', statusCallback),
+  ]);
+  return { spx, spy, rsp, vix };
+}
+
+// --------------------------------------------------------------
+// Module Gave (cadran macro) — fetch dédié, source forcée Yahoo
+// --------------------------------------------------------------
+
+async function fetchGaveTicker(key, statusCallback) {
+  const { ticker, source } = GAVE_TICKERS[key];
+  statusCallback(`Récupération de ${key.toUpperCase()} (${ticker}, mensuel, ${source})...`, 'pending');
+  try {
+    const res = await fetch(`/api/prices?ticker=${encodeURIComponent(ticker)}&interval=mo&range=max&source=${source}`);
+    const json = await res.json();
+    if (!res.ok || json.error) {
+      statusCallback(`Échec ${key.toUpperCase()} : ${json.error || 'erreur inconnue'}`, 'err');
+      return null;
+    }
+    // GLD/WTI : pas de dividende, close = adjClose (champ parfois absent) ; TLT/SPY : adjClose requis.
+    // Normalisation de la date au format YYYY-MM-01 pour être alignée avec le socle statique.
+    const series = json.data
+      .filter((c) => c.close !== null && c.close !== undefined)
+      .map((c) => [c.date.slice(0, 7) + '-01', c.adjClose !== null && c.adjClose !== undefined ? c.adjClose : c.close]);
+    statusCallback(`${key.toUpperCase()} OK (source: ${json.source}, ${series.length} mois)`, 'ok');
+    return series;
+  } catch (e) {
+    statusCallback(`Erreur réseau ${key.toUpperCase()} : ${e.message}`, 'err');
+    return null;
+  }
+}
+
+async function fetchAllGaveData(statusCallback) {
+  const [gld, tlt, spy, wti] = await Promise.all([
+    fetchGaveTicker('gld', statusCallback),
+    fetchGaveTicker('tlt', statusCallback),
+    fetchGaveTicker('spy', statusCallback),
+    fetchGaveTicker('wti', statusCallback),
+  ]);
+  return { gld, tlt, spy, wti };
+}
+
+const STORAGE_KEY_GAVE_CACHE = 'marketRegimeGaveCache_v1';
+const GAVE_CACHE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours — mise à jour mensuelle
+
+function loadGaveCache() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_GAVE_CACHE);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* cache absent ou corrompu */ }
+  return null;
+}
+
+function saveGaveCache(result) {
+  try {
+    localStorage.setItem(STORAGE_KEY_GAVE_CACHE, JSON.stringify({ fetchedAt: new Date().toISOString(), result }));
+  } catch (e) { /* quota localStorage dépassé : tant pis, pas bloquant */ }
+}
+
+function isGaveCacheFresh(cache) {
+  if (!cache || !cache.fetchedAt) return false;
+  return (Date.now() - new Date(cache.fetchedAt).getTime()) < GAVE_CACHE_MAX_AGE_MS;
+}
+
+/**
+ * Calcule (ou réutilise depuis le cache mensuel) le module Gave.
+ * Ne dépend plus des données ^spx du module hebdomadaire : le module Gave
+ * utilise désormais SPY comme proxy actions (cohérent avec sa propre cadence
+ * mensuelle et déjà récupéré pour la Règle 2).
+ */
+async function runGaveAnalysis(statusCallback, forceRefresh = false) {
+  const cache = loadGaveCache();
+  if (!forceRefresh && isGaveCacheFresh(cache)) {
+    statusCallback('Module Gave : cache mensuel réutilisé (moins de 30 jours).', 'ok');
+    return cache.result;
+  }
+
+  const gaveData = await fetchAllGaveData(statusCallback);
+  const result = computeGaveIndicators({
+    gldLive: gaveData.gld,
+    tlt: gaveData.tlt,
+    spy: gaveData.spy,
+    wtiLive: gaveData.wti,
+  }, { GOLD_SEED, WTI_SEED });
+
+  if (result.success) {
+    saveGaveCache(result);
+    statusCallback('Module Gave : calcul réussi, mis en cache pour 30 jours.', 'ok');
+  } else {
+    statusCallback(`Module Gave : ${result.errors.join(' ')}`, 'err');
+  }
+  return result;
+}
+
+// --------------------------------------------------------------
+// Calcul complet : indicateurs + score
+// --------------------------------------------------------------
+
+function computeAnalysis(rawData, params, weights) {
+  const errors = [];
+
+  if (!rawData.spx || rawData.spx.length < 60) {
+    errors.push("Données S&P 500 (^spx) insuffisantes ou manquantes.");
+  }
+  if (!rawData.spy || rawData.spy.length < 20) errors.push('Données SPY manquantes.');
+  if (!rawData.rsp || rawData.rsp.length < 20) errors.push('Données RSP manquantes.');
+  if (!rawData.vix || rawData.vix.length < 5) errors.push('Données VIX manquantes.');
+
+  if (errors.length > 0) {
+    return { success: false, errors };
+  }
+
+  // Exclusion de la semaine en cours (non close) sur la série principale
+  const spx = excludeCurrentIncompleteWeek(rawData.spx);
+  const spy = excludeCurrentIncompleteWeek(rawData.spy);
+  const rsp = excludeCurrentIncompleteWeek(rawData.rsp);
+  const vixSeries = excludeCurrentIncompleteWeek(rawData.vix);
+
+  if (spx.length < 60) {
+    return { success: false, errors: ['Historique S&P 500 trop court après exclusion de la semaine en cours (minimum 60 bougies requis pour EMA50).'] };
+  }
+
+  const closes = spx.map((c) => c.close);
+
+  const ema21Series = calculateEMA(closes, params.emaFast);
+  const ema50Series = calculateEMA(closes, params.emaSlow);
+  const rsiSeries = calculateRSI(closes, params.rsiPeriod);
+  const macdResult = calculateMACD(closes, params.macdFast, params.macdSlow, params.macdSignal);
+  const atrSeries = calculateATR(spx, params.atrPeriod);
+
+  const lastIdx = spx.length - 1;
+
+  const close = closes[lastIdx];
+  const ema21 = ema21Series[lastIdx];
+  const ema50 = ema50Series[lastIdx];
+  const ema21Prev = ema21Series[lastIdx - 1];
+  const rsi = rsiSeries[lastIdx];
+  const macdHistogram = macdResult.histogram[lastIdx];
+  const macdHistogramPrev = macdResult.histogram[lastIdx - 1];
+  const atr = atrSeries[lastIdx];
+  const atrPct = (atr / close) * 100;
+
+  if ([ema21, ema50, ema21Prev, rsi, macdHistogram, macdHistogramPrev, atr].some((v) => Number.isNaN(v))) {
+    return { success: false, errors: ["Historique insuffisant pour calculer un ou plusieurs indicateurs (EMA/RSI/MACD/ATR). Il faut au moins ~60 semaines de données."] };
+  }
+
+  const vix = vixSeries[vixSeries.length - 1].close;
+
+  // Ratio SPY/RSP — alignement par date sur les N dernières bougies communes
+  const ratioSeries = buildRatioSeries(spy, rsp);
+  if (ratioSeries.length < 10) {
+    return { success: false, errors: ['Historique insuffisant pour calculer le ratio SPY/RSP (concentration).'] };
+  }
+  const ratioSpyRsp = ratioSeries[ratioSeries.length - 1].value;
+  const ratioMA = averageOf(ratioSeries.slice(-10).map((r) => r.value)); // moyenne mobile 10 semaines du ratio
+
+  // --- Scores par pilier ---
+  const tendance = scoreTendance({ close, ema21, ema50 });
+  const momentum = scoreMomentum({ rsi, macdHistogram, macdHistogramPrev });
+  const volatilite = scoreVolatilite({ vix, atrPct });
+  const concentration = scoreConcentration({ ratioSpyRsp, ratioSpyRspMA: ratioMA });
+
+  const pillars = { tendance, momentum, volatilite, concentration };
+  const globalResult = calculateGlobalScore(pillars, weights);
+  const interpretation = interpretScore(globalResult.globalScore);
+
+  // --- Chandelier (couche informative, hors score — cf cahier des charges §4bis) ---
+  const candlestick = detectCandlestickPattern(spx.slice(-3));
+
+  return {
+    success: true,
+    errors: [],
+    date: spx[lastIdx].date,
+    close,
+    indicators: { ema21, ema50, rsi, macdHistogram, atr, atrPct, vix, ratioSpyRsp, ratioMA },
+    pillars,
+    globalScore: globalResult.globalScore,
+    weights: globalResult.weights,
+    interpretation,
+    candlestick,
+  };
+}
+
+/**
+ * Construit une série du ratio SPY/RSP, alignée sur les dates communes aux deux séries.
+ */
+function buildRatioSeries(spy, rsp) {
+  const rspByDate = new Map(rsp.map((c) => [c.date, c.close]));
+  const result = [];
+  for (const c of spy) {
+    if (rspByDate.has(c.date)) {
+      result.push({ date: c.date, value: c.close / rspByDate.get(c.date) });
+    }
+  }
+  return result;
+}
+
+function averageOf(arr) {
+  if (arr.length === 0) return NaN;
+  return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+// --------------------------------------------------------------
+// Persistance — historique, poids, paramètres
+// --------------------------------------------------------------
+
+function loadWeights() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_WEIGHTS);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* ignore, fallback ci-dessous */ }
+  return { ...DEFAULT_WEIGHTS };
+}
+
+function saveWeights(weights) {
+  localStorage.setItem(STORAGE_KEY_WEIGHTS, JSON.stringify(weights));
+}
+
+function loadParams() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PARAMS);
+    if (raw) return { ...DEFAULT_PARAMS, ...JSON.parse(raw) };
+  } catch (e) { /* ignore, fallback ci-dessous */ }
+  return { ...DEFAULT_PARAMS };
+}
+
+function saveParams(params) {
+  localStorage.setItem(STORAGE_KEY_PARAMS, JSON.stringify(params));
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_HISTORY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) { /* historique corrompu ou absent */ }
+  return [];
+}
+
+function saveHistory(history) {
+  localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history));
+}
+
+/**
+ * Ajoute une nouvelle entrée à l'historique si la date n'y figure pas déjà
+ * (évite les doublons si l'utilisateur relance le calcul sur la même semaine).
+ */
+function addHistoryEntry(analysis) {
+  const history = loadHistory();
+  const existingIdx = history.findIndex((h) => h.date === analysis.date);
+
+  const entry = {
+    date: analysis.date,
+    timestamp: new Date().toISOString(),
+    close: analysis.close,
+    globalScore: analysis.globalScore,
+    interpretation: analysis.interpretation,
+    pillars: analysis.pillars,
+    weights: analysis.weights,
+    indicators: analysis.indicators,
+    candlestick: analysis.candlestick,
+    validation: existingIdx !== -1 ? history[existingIdx].validation : { perf1w: null, perf1m: null, perf3m: null },
+  };
+
+  if (existingIdx !== -1) {
+    history[existingIdx] = entry;
+  } else {
+    history.push(entry);
+  }
+
+  history.sort((a, b) => a.date.localeCompare(b.date));
+  saveHistory(history);
+  return history;
+}
+
+/**
+ * Module de validation (cahier des charges §8) : pour chaque entrée d'historique
+ * dont la validation n'est pas encore complète, tente de calculer la performance
+ * réelle du S&P 500 à +1 semaine / +1 mois (~4 semaines) / +3 mois (~13 semaines).
+ */
+function updateValidation(history, spxCandlesFull) {
+  const excluded = excludeCurrentIncompleteWeek(spxCandlesFull);
+  const dateIndex = new Map(excluded.map((c, i) => [c.date, i]));
+
+  let updated = false;
+  for (const entry of history) {
+    const needsUpdate = entry.validation.perf1w === null || entry.validation.perf1m === null || entry.validation.perf3m === null;
+    if (!needsUpdate) continue;
+
+    const idx = dateIndex.get(entry.date);
+    if (idx === undefined) continue;
+
+    if (entry.validation.perf1w === null && excluded[idx + 1]) {
+      entry.validation.perf1w = pctChange(entry.close, excluded[idx + 1].close);
+      updated = true;
+    }
+    if (entry.validation.perf1m === null && excluded[idx + 4]) {
+      entry.validation.perf1m = pctChange(entry.close, excluded[idx + 4].close);
+      updated = true;
+    }
+    if (entry.validation.perf3m === null && excluded[idx + 13]) {
+      entry.validation.perf3m = pctChange(entry.close, excluded[idx + 13].close);
+      updated = true;
+    }
+  }
+
+  if (updated) saveHistory(history);
+  return { history, updated };
+}
+
+function pctChange(from, to) {
+  return Math.round(((to - from) / from) * 1000) / 10; // arrondi à 0.1%
+}
+
+// --------------------------------------------------------------
+// Export / Import JSON
+// --------------------------------------------------------------
+
+function exportHistoryToJson() {
+  const history = loadHistory();
+  const weights = loadWeights();
+  const params = loadParams();
+  const payload = { exportedAt: new Date().toISOString(), history, weights, params };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `historique-regime-marche-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importHistoryFromJson(file, onDone, onError) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (!Array.isArray(payload.history)) throw new Error('Format invalide : champ "history" manquant ou incorrect.');
+      saveHistory(payload.history);
+      if (payload.weights) saveWeights(payload.weights);
+      if (payload.params) saveParams(payload.params);
+      onDone(payload);
+    } catch (err) {
+      onError(err);
+    }
+  };
+  reader.onerror = () => onError(new Error('Impossible de lire le fichier.'));
+  reader.readAsText(file);
+}
+
+</script>
+<script>
+// ============================================================
+// UI — liaison entre les moteurs et l'affichage
+// ============================================================
+
+const statusConsole = document.getElementById('status-console');
+const btnCalculate = document.getElementById('btn-calculate');
+
+function logStatus(message, type = 'pending') {
+  const line = document.createElement('div');
+  line.className = `status-line ${type}`;
+  const time = new Date().toLocaleTimeString('fr-FR');
+  line.textContent = `[${time}] ${message}`;
+  statusConsole.appendChild(line);
+  statusConsole.scrollTop = statusConsole.scrollHeight;
+}
+
+function clearStatus() {
+  statusConsole.innerHTML = '';
+}
+
+// --------------------------------------------------------------
+// Rendu du score global
+// --------------------------------------------------------------
+function renderScore(analysis) {
+  const panel = document.getElementById('score-panel');
+  if (!analysis.success) {
+    panel.innerHTML = `<div class="empty-state" style="width:100%; color: var(--red);">Calcul impossible : ${analysis.errors.join(' ')}</div>`;
+    return;
+  }
+
+  const level = analysis.interpretation.level;
+  const LOW_ZONE_THRESHOLD = 35; // cf. test-robustesse-rebond-bas.js — seuil du décile où un effet a été mesuré comme robuste
+  const inLowZone = analysis.globalScore < LOW_ZONE_THRESHOLD;
+
+  panel.innerHTML = `
+    <div class="score-dial">
+      <div class="score-label level-${level}">${analysis.interpretation.label}</div>
+      <div class="score-number level-${level}">Score détaillé : <span class="value">${analysis.globalScore.toFixed(0)}</span>/100</div>
+    </div>
+    <div class="score-caveat">
+      Clôture du ${formatDate(analysis.date)} à ${analysis.close.toFixed(2)}.
+      Les bandes d'interprétation (95-100 très favorable → 0-39 défavorable) sont provisoires tant que le module de validation n'a pas accumulé assez d'historique.
+    </div>
+    <div class="score-disclaimer">
+      <strong>Lecture des bandes :</strong> seule la zone la plus basse (score &lt; 35, environ 10% des semaines depuis 2017) montre une régularité statistique sur la suite — un rebond moyen à horizon 1 mois, observé sur 14 épisodes de marché distincts (2018, 2020, 2022, 2023, 2025...), consistant sur l'ensemble des fenêtres testées. Les bandes intermédiaires et hautes décrivent le contexte présent, sans lien démontré avec la performance future — comparer deux semaines entre elles au-dessus de ce seuil n'a pas de sens prédictif.
+      Ceci reste une observation historique datée, pas un signal d'achat : rien ne garantit sa répétition, et l'ampleur du rebond a fortement varié d'un épisode à l'autre.
+      ${inLowZone ? '<div class="zone-active">Le score actuel se situe dans cette zone basse.</div>' : ''}
+    </div>
+  `;
+}
+
+function formatDate(isoDate) {
+  const d = new Date(isoDate + 'T00:00:00Z');
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+// --------------------------------------------------------------
+// Rendu des piliers
+// --------------------------------------------------------------
+const PILLAR_LABELS = {
+  tendance: 'Tendance',
+  momentum: 'Momentum',
+  volatilite: 'Volatilité',
+  concentration: 'Concentration du marché',
+};
+
+function pillarColor(score) {
+  if (score >= 60) return 'var(--green)';
+  if (score >= 40) return 'var(--gold)';
+  return 'var(--red)';
+}
+
+// --------------------------------------------------------------
+// Libellés et explications des sous-indicateurs (notes -2..+2)
+// Les seuils cités correspondent exactement à ceux codés dans
+// score-engine.js — aucune valeur inventée ici.
+// --------------------------------------------------------------
+const NOTE_LABELS = {
+  prixVsEma21: 'Prix vs EMA21',
+  ema21VsEma50: 'EMA21 vs EMA50',
+  rsi: 'RSI (force du momentum)',
+  macdNiveau: 'Niveau du MACD',
+  macdAcceleration: 'Accélération du MACD',
+  vix: 'VIX (nervosité implicite)',
+  atr: 'Amplitude hebdomadaire (ATR%)',
+  ecartRatio: 'Concentration (ratio SPY/RSP vs sa moyenne)',
+};
+
+function explainNote(noteKey, value, indicators) {
+  const v = value.toFixed(2);
+  switch (noteKey) {
+    case 'prixVsEma21':
+      return value > 0
+        ? `Note ${v} : le prix est actuellement au-dessus de l'EMA21.`
+        : `Note ${v} : le prix est actuellement en dessous de l'EMA21.`;
+    case 'ema21VsEma50':
+      return value > 0
+        ? `Note ${v} : l'EMA21 est au-dessus de l'EMA50 — tendance de fond haussière au sens de cet indicateur.`
+        : `Note ${v} : l'EMA21 est en dessous de l'EMA50 — tendance de fond baissière au sens de cet indicateur.`;
+    case 'rsi': {
+      const rsiVal = indicators?.rsi;
+      return `Note ${v} : RSI actuel${rsiVal !== undefined ? ` = ${rsiVal.toFixed(0)}` : ''} (le calcul prend 50 comme neutre, 80 comme note pleine +2, 20 comme note pleine -2).`;
+    }
+    case 'macdNiveau':
+      return value > 0
+        ? `Note ${v} : l'histogramme MACD est positif — momentum haussier au sens de cet indicateur.`
+        : `Note ${v} : l'histogramme MACD est négatif — momentum baissier au sens de cet indicateur.`;
+    case 'macdAcceleration':
+      return value > 0
+        ? `Note ${v} : l'histogramme MACD accélère à la hausse par rapport à la semaine précédente.`
+        : `Note ${v} : l'histogramme MACD accélère à la baisse par rapport à la semaine précédente.`;
+    case 'vix': {
+      const vixVal = indicators?.vix;
+      return `Note ${v} : VIX actuel${vixVal !== undefined ? ` = ${vixVal.toFixed(1)}` : ''} (seuils codés : <15 très favorable, 15-20 favorable, 20-25 neutre, 25-30 défavorable, >30 très défavorable).`;
+    }
+    case 'atr': {
+      const atrVal = indicators?.atrPct;
+      return `Note ${v} : ATR${atrVal !== undefined ? ` = ${atrVal.toFixed(2)}%` : ''} du prix (référence : ~1.5-2.5% en semaine calme, >4% en semaine agitée).`;
+    }
+    case 'ecartRatio':
+      return value < 0
+        ? `Note ${v} : le ratio SPY/RSP s'envole au-dessus de sa moyenne récente — concentration croissante sur les méga-caps, lu comme un signal de fragilité.`
+        : `Note ${v} : le ratio SPY/RSP est proche ou en dessous de sa moyenne récente — pas de signe de concentration accélérée.`;
+    default:
+      return `Note ${v}.`;
+  }
+}
+
+function getPreviousEntry(currentDate) {
+  const history = loadHistory();
+  const prior = history.filter((h) => h.date < currentDate).sort((a, b) => b.date.localeCompare(a.date));
+  return prior.length > 0 ? prior[0] : null;
+}
+
+function deltaSpan(current, previous, { higherIsBetter = true, decimals = 2, suffix = '' } = {}) {
+  if (previous === undefined || previous === null) return '<span class="note-delta flat">— (1ère mesure)</span>';
+  const d = current - previous;
+  if (Math.abs(d) < 1e-9) return '<span class="note-delta flat">= inchangé</span>';
+  const goingUp = d > 0;
+  const cls = (goingUp === higherIsBetter) ? 'up' : 'down';
+  return `<span class="note-delta ${cls}">${goingUp ? '▲' : '▼'} ${goingUp ? '+' : ''}${d.toFixed(decimals)}${suffix} vs sem. précédente</span>`;
+}
+
+function renderPillarDetail(key, pillar, analysis, prevEntry) {
+  const prevPillar = prevEntry ? prevEntry.pillars[key] : null;
+  const scoreDelta = prevPillar ? pillar.score - prevPillar.score : null;
+
+  let summary;
+  if (!prevEntry) {
+    summary = `Première mesure enregistrée pour ce pilier — pas de comparaison possible avec une semaine antérieure.`;
+  } else if (Math.abs(scoreDelta) < 0.5) {
+    summary = `Le score du pilier est resté stable par rapport à la semaine précédente (${prevPillar.score.toFixed(0)} → ${pillar.score.toFixed(0)}).`;
+  } else {
+    // Identifie le sous-indicateur dont la note a le plus varié -> principal contributeur du mouvement
+    let maxAbsDelta = -1, driverKey = null;
+    for (const noteKey of Object.keys(pillar.notes)) {
+      const prevNote = prevPillar.notes[noteKey];
+      if (prevNote === undefined) continue;
+      const d = Math.abs(pillar.notes[noteKey] - prevNote);
+      if (d > maxAbsDelta) { maxAbsDelta = d; driverKey = noteKey; }
+    }
+    const direction = scoreDelta > 0 ? 'en hausse' : 'en baisse';
+    summary = `Score ${direction} de ${prevPillar.score.toFixed(0)} à ${pillar.score.toFixed(0)} par rapport à la semaine précédente.` +
+      (driverKey ? ` Principal contributeur du mouvement : <strong>${NOTE_LABELS[driverKey] || driverKey}</strong>.` : '');
+  }
+
+  const noteRows = Object.entries(pillar.notes).map(([noteKey, value]) => {
+    const prevValue = prevPillar ? prevPillar.notes[noteKey] : undefined;
+    return `
+      <div class="note-row">
+        <span class="note-label">${NOTE_LABELS[noteKey] || noteKey}</span>
+        <span class="note-value">${value.toFixed(2)}</span>
+        ${deltaSpan(value, prevValue, { decimals: 2 })}
+      </div>
+    `;
+  }).join('');
+
+  const explanations = Object.entries(pillar.notes)
+    .map(([noteKey, value]) => explainNote(noteKey, value, analysis.indicators))
+    .join(' ');
+
+  return `
+    <div class="pillar-detail">
+      <div class="detail-summary">${summary}</div>
+      ${noteRows}
+      <div class="note-explain">${explanations}</div>
+    </div>
+  `;
+}
+
+function renderPillars(analysis) {
+  const grid = document.getElementById('pillars-grid');
+  if (!analysis.success) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column: 1/-1;">—</div>';
+    return;
+  }
+
+  const prevEntry = getPreviousEntry(analysis.date);
+
+  grid.innerHTML = Object.entries(analysis.pillars).map(([key, pillar]) => {
+    const weight = analysis.weights[key];
+    const color = pillarColor(pillar.score);
+    return `
+      <div class="pillar-card" data-pillar="${key}">
+        <div class="pillar-name">
+          <span>${PILLAR_LABELS[key]}</span>
+          <span class="pillar-weight">${weight}%</span>
+        </div>
+        <div class="pillar-score" style="color:${color}">${pillar.score.toFixed(0)}</div>
+        <div class="gauge-track">
+          <div class="gauge-fill" style="width:${pillar.score}%; background:${color};"></div>
+        </div>
+        <div class="pillar-toggle-hint"><span class="chevron">▸</span> Pourquoi ce score ?</div>
+        ${renderPillarDetail(key, pillar, analysis, prevEntry)}
+      </div>
+    `;
+  }).join('');
+
+  grid.querySelectorAll('.pillar-card').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      // Ignore les clics à l'intérieur du panneau déjà ouvert (pas de fermeture accidentelle en lisant le détail)
+      if (e.target.closest('.pillar-detail')) return;
+      card.classList.toggle('open');
+    });
+  });
+}
+
+// --------------------------------------------------------------
+// Rendu du badge chandelier
+// --------------------------------------------------------------
+function renderCandlestick(analysis) {
+  const section = document.getElementById('candlestick-section');
+  const badge = document.getElementById('candlestick-badge');
+  if (!analysis.success || !analysis.candlestick) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  badge.innerHTML = `
+    <span class="cs-name">${analysis.candlestick.name}</span>
+    <span class="cs-desc">${analysis.candlestick.description}</span>
+    <span class="cs-note">Information contextuelle non validée statistiquement, fournie à titre pédagogique — n'influence pas le score.</span>
+  `;
+}
+
+// --------------------------------------------------------------
+// Configuration : pondérations
+// --------------------------------------------------------------
+function renderWeightsConfig() {
+  const container = document.getElementById('weights-config');
+  container.innerHTML = Object.entries(appState.weights).map(([key, value]) => `
+    <div class="config-field">
+      <label for="weight-${key}">${PILLAR_LABELS[key]} (%)</label>
+      <input type="number" id="weight-${key}" min="0" max="100" step="1" value="${value}" data-weight-key="${key}">
+    </div>
+  `).join('');
+
+  container.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('input', onWeightChange);
+  });
+  updateWeightsTotal();
+}
+
+function onWeightChange(e) {
+  const key = e.target.dataset.weightKey;
+  const value = parseFloat(e.target.value);
+  appState.weights[key] = Number.isNaN(value) ? 0 : value;
+  saveWeights(appState.weights);
+  updateWeightsTotal();
+}
+
+function updateWeightsTotal() {
+  const total = Object.values(appState.weights).reduce((a, b) => a + b, 0);
+  const el = document.getElementById('weights-total');
+  el.textContent = `Total : ${total}% ${total === 100 ? '' : '(sera normalisé automatiquement à 100% lors du calcul)'}`;
+  el.className = `weights-total ${total === 100 ? 'valid' : 'invalid'}`;
+}
+
+// --------------------------------------------------------------
+// Configuration : paramètres des indicateurs
+// --------------------------------------------------------------
+const PARAM_LABELS = {
+  emaFast: 'EMA rapide (semaines)',
+  emaSlow: 'EMA lente (semaines)',
+  rsiPeriod: 'RSI (période)',
+  macdFast: 'MACD rapide',
+  macdSlow: 'MACD lent',
+  macdSignal: 'MACD signal',
+  atrPeriod: 'ATR (période)',
+};
+
+function renderParamsConfig() {
+  const container = document.getElementById('params-config');
+  container.innerHTML = Object.entries(appState.params).map(([key, value]) => `
+    <div class="config-field">
+      <label for="param-${key}">${PARAM_LABELS[key] || key}</label>
+      <input type="number" id="param-${key}" min="1" max="200" step="1" value="${value}" data-param-key="${key}">
+    </div>
+  `).join('');
+
+  container.querySelectorAll('input').forEach((input) => {
+    input.addEventListener('input', (e) => {
+      const key = e.target.dataset.paramKey;
+      const value = parseInt(e.target.value, 10);
+      appState.params[key] = Number.isNaN(value) ? appState.params[key] : value;
+      saveParams(appState.params);
+    });
+  });
+}
+
+document.getElementById('btn-reset-defaults').addEventListener('click', () => {
+  appState.weights = { ...DEFAULT_WEIGHTS };
+  appState.params = { ...DEFAULT_PARAMS };
+  saveWeights(appState.weights);
+  saveParams(appState.params);
+  renderWeightsConfig();
+  renderParamsConfig();
+  logStatus('Pondérations et paramètres réinitialisés aux valeurs par défaut.', 'ok');
+});
+
+// --------------------------------------------------------------
+// Rendu de l'historique
+// --------------------------------------------------------------
+function formatPerf(value) {
+  if (value === null || value === undefined) return '<span class="perf-pending">en attente</span>';
+  const cls = value >= 0 ? 'perf-positive' : 'perf-negative';
+  const sign = value >= 0 ? '+' : '';
+  return `<span class="${cls}">${sign}${value.toFixed(1)}%</span>`;
+}
+
+function renderHistory() {
+  const container = document.getElementById('history-container');
+  const history = loadHistory();
+
+  if (history.length === 0) {
+    container.innerHTML = '<div class="empty-state">Aucun historique pour l\'instant.</div>';
+    return;
+  }
+
+  const rows = [...history].reverse().map((entry) => `
+    <tr>
+      <td>${formatDate(entry.date)}</td>
+      <td class="score-cell level-${entry.interpretation.level}">${entry.globalScore.toFixed(0)}</td>
+      <td>${entry.close.toFixed(2)}</td>
+      <td>${formatPerf(entry.validation.perf1w)}</td>
+      <td>${formatPerf(entry.validation.perf1m)}</td>
+      <td>${formatPerf(entry.validation.perf3m)}</td>
+    </tr>
+  `).join('');
+
+  container.innerHTML = `
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Semaine</th>
+          <th>Score</th>
+          <th>Clôture</th>
+          <th>+1 sem.</th>
+          <th>+1 mois</th>
+          <th>+3 mois</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+// --------------------------------------------------------------
+// Calcul principal
+// --------------------------------------------------------------
+async function runCalculation() {
+  btnCalculate.disabled = true;
+  clearStatus();
+  logStatus('Démarrage du calcul hebdomadaire...', 'pending');
+
+  const rawData = await fetchAllData(logStatus);
+  appState.rawData = rawData;
+
+  const analysis = computeAnalysis(rawData, appState.params, appState.weights);
+
+  if (!analysis.success) {
+    logStatus(`Échec du calcul : ${analysis.errors.join(' ')}`, 'err');
+    renderScore(analysis);
+    renderPillars(analysis);
+    btnCalculate.disabled = false;
+    return;
+  }
+
+  logStatus(`Calcul réussi — score global ${analysis.globalScore.toFixed(1)} (${analysis.interpretation.label})`, 'ok');
+
+  renderScore(analysis);
+  renderPillars(analysis);
+  renderCandlestick(analysis);
+
+  const history = addHistoryEntry(analysis);
+  if (rawData.spx) {
+    const { updated } = updateValidation(history, rawData.spx);
+    if (updated) logStatus('Historique de validation mis à jour avec les nouvelles données disponibles.', 'ok');
+  }
+  renderHistory();
+
+  document.getElementById('last-update').textContent = `Dernier calcul : ${new Date().toLocaleString('fr-FR')}`;
+  btnCalculate.disabled = false;
+}
+
+btnCalculate.addEventListener('click', runCalculation);
+
+// --------------------------------------------------------------
+// Export / Import
+// --------------------------------------------------------------
+document.getElementById('btn-export').addEventListener('click', () => {
+  exportHistoryToJson();
+  logStatus('Historique exporté en JSON.', 'ok');
+});
+
+const importFileInput = document.getElementById('btn-import-file');
+document.getElementById('btn-import-trigger').addEventListener('click', () => importFileInput.click());
+importFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  importHistoryFromJson(
+    file,
+    (payload) => {
+      logStatus(`Import réussi : ${payload.history.length} entrée(s) chargée(s).`, 'ok');
+      appState.weights = loadWeights();
+      appState.params = loadParams();
+      renderWeightsConfig();
+      renderParamsConfig();
+      renderHistory();
+    },
+    (err) => {
+      logStatus(`Échec de l'import : ${err.message}`, 'err');
+    }
+  );
+  importFileInput.value = '';
+});
+
+// --------------------------------------------------------------
+// Module Gave (cadran macro) — rendu dynamique
+// --------------------------------------------------------------
+function clampPct(v, min = -100, max = 100) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function formatEcart(ecartPct) {
+  const sign = ecartPct >= 0 ? '+' : '';
+  return `${sign}${ecartPct.toFixed(1)} %`;
+}
+
+function renderGaveModule(result) {
+  const readout = document.getElementById('gave-readout');
+  if (!result || !result.success) {
+    if (readout) {
+      readout.innerHTML = `<div style="color: var(--red);">Module Gave indisponible : ${result ? result.errors.join(' ') : 'erreur inconnue'}</div>`;
+    }
+    return;
+  }
+
+  const marker = document.getElementById('gave-marker');
+  const glow = document.getElementById('gave-marker-glow');
+  const leftPct = 50 + clampPct(result.croissance.ecartPct) / 2;
+  const bottomPct = 50 + clampPct(result.inflation.ecartPct) / 2;
+  if (marker) { marker.style.left = `${leftPct}%`; marker.style.bottom = `${bottomPct}%`; }
+  if (glow) { glow.style.left = `${leftPct}%`; glow.style.bottom = `${bottomPct}%`; }
+
+  const ecartCroissanceEl = document.getElementById('gave-ecart-croissance');
+  const ecartInflationEl = document.getElementById('gave-ecart-inflation');
+  const cadranEl = document.getElementById('gave-cadran');
+  if (ecartCroissanceEl) ecartCroissanceEl.textContent = formatEcart(result.croissance.ecartPct);
+  if (ecartInflationEl) ecartInflationEl.textContent = formatEcart(result.inflation.ecartPct);
+  if (cadranEl) cadranEl.textContent = result.quadrant.label;
+
+  const detailInflation = document.getElementById('gave-detail-inflation');
+  const detailCroissance = document.getElementById('gave-detail-croissance');
+  const detailActionsOr = document.getElementById('gave-detail-actionsor');
+  if (detailInflation) detailInflation.textContent = `${Math.abs(result.inflation.ecartPct).toFixed(1)} % ${result.inflation.ecartPct >= 0 ? 'au-dessus' : 'en-dessous'}`;
+  if (detailCroissance) detailCroissance.textContent = `${Math.abs(result.croissance.ecartPct).toFixed(1)} % ${result.croissance.ecartPct >= 0 ? 'au-dessus' : 'en-dessous'}`;
+  if (detailActionsOr) detailActionsOr.textContent = `${result.actionsOr.ecartPct >= 0 ? 'au-dessus' : 'sous'} sa MM7ans (${formatEcart(result.actionsOr.ecartPct)})`;
+
+  const dateLabel = document.getElementById('gave-date');
+  if (dateLabel) dateLabel.textContent = `Mise à jour : ${formatDate(result.date)}`;
+}
+
+async function initGaveModule() {
+  logStatus('Module Gave : récupération des données...', 'pending');
+  const result = await runGaveAnalysis(logStatus);
+  renderGaveModule(result);
+}
+
+// --------------------------------------------------------------
+// Initialisation
+// --------------------------------------------------------------
+renderWeightsConfig();
+renderParamsConfig();
+renderHistory();
+logStatus('Application prête. Clique sur "Lancer le calcul de la semaine" pour commencer.', 'pending');
+initGaveModule();
+
+// --------------------------------------------------------------
+// Enregistrement du Service Worker (fonctionnement hors-ligne de l'app shell)
+// --------------------------------------------------------------
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((err) => {
+      console.warn('Échec de l\'enregistrement du Service Worker :', err);
+    });
+  });
+}
+</script>
+
+</body>
+</html>
