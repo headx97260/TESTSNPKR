@@ -83,7 +83,14 @@
     font-weight: 600;
   }
 
-  /* --- Score global : élément signature --- */
+  /* --- Score global : élément signature ---
+     Hiérarchie visuelle volontairement inversée par rapport à une v1 qui
+     mettait le chiffre en avant : le test de monotonie (session du
+     2026-07-21) a montré que seule la zone <35 porte un signal validé —
+     un chiffre précis à la décimale suggère une granularité que les
+     données ne supportent pas au-dessus de ce seuil. Le libellé qualitatif
+     (bande) est donc l'élément dominant ; le chiffre reste affiché par
+     transparence sur le calcul, mais en retrait, arrondi à l'entier. */
   .score-panel {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -95,22 +102,46 @@
     flex-wrap: wrap;
   }
   .score-dial { flex-shrink: 0; }
+  .score-label {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.15;
+    max-width: 260px;
+  }
   .score-number {
     font-family: var(--font-data);
-    font-size: 3.2rem;
-    font-weight: 700;
-    line-height: 1;
-  }
-  .score-label {
     font-size: 1rem;
-    font-weight: 600;
-    margin-top: 6px;
+    font-weight: 500;
+    margin-top: 8px;
+    color: var(--text-muted);
   }
+  .score-number .value { color: inherit; font-weight: 600; }
   .score-caveat {
     font-size: 0.78rem;
     color: var(--text-muted);
     margin-top: 8px;
     max-width: 320px;
+  }
+
+  .score-disclaimer {
+    width: 100%;
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .score-disclaimer strong { color: var(--text); }
+  .score-disclaimer .zone-active {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    background: var(--panel-2);
+    border-left: 3px solid var(--amber);
+    color: var(--text);
+    font-size: 0.78rem;
   }
 
   .level-very-favorable { color: var(--green); }
@@ -146,6 +177,57 @@
     font-family: var(--font-data);
     font-size: 1.6rem;
     margin: 6px 0 8px;
+  }
+
+  /* --- Accordéon d'explication par pilier --- */
+  .pillar-card { cursor: pointer; }
+  .pillar-toggle-hint {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .pillar-toggle-hint .chevron { transition: transform 0.15s ease; display: inline-block; }
+  .pillar-card.open .pillar-toggle-hint .chevron { transform: rotate(90deg); }
+  .pillar-detail {
+    display: none;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    cursor: default;
+  }
+  .pillar-card.open .pillar-detail { display: block; }
+  .pillar-detail .detail-summary {
+    font-size: 0.8rem;
+    color: var(--text);
+    margin-bottom: 10px;
+    line-height: 1.5;
+  }
+  .pillar-detail .detail-summary strong { color: var(--gold); }
+  .note-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.76rem;
+    padding: 5px 0;
+    border-bottom: 1px dashed var(--border);
+    gap: 10px;
+  }
+  .note-row:last-child { border-bottom: none; }
+  .note-row .note-label { color: var(--text-muted); flex: 1; }
+  .note-row .note-value { font-family: var(--font-data); color: var(--text); white-space: nowrap; }
+  .note-row .note-delta { font-family: var(--font-data); white-space: nowrap; font-size: 0.72rem; }
+  .note-delta.up { color: var(--green); }
+  .note-delta.down { color: var(--red); }
+  .note-delta.flat { color: var(--text-muted); }
+  .note-explain {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    line-height: 1.5;
+    font-style: italic;
   }
   .gauge-track {
     height: 6px;
@@ -1670,14 +1752,22 @@ function renderScore(analysis) {
   }
 
   const level = analysis.interpretation.level;
+  const LOW_ZONE_THRESHOLD = 35; // cf. test-robustesse-rebond-bas.js — seuil du décile où un effet a été mesuré comme robuste
+  const inLowZone = analysis.globalScore < LOW_ZONE_THRESHOLD;
+
   panel.innerHTML = `
     <div class="score-dial">
-      <div class="score-number level-${level}">${analysis.globalScore.toFixed(1)}</div>
       <div class="score-label level-${level}">${analysis.interpretation.label}</div>
+      <div class="score-number level-${level}">Score détaillé : <span class="value">${analysis.globalScore.toFixed(0)}</span>/100</div>
     </div>
     <div class="score-caveat">
       Clôture du ${formatDate(analysis.date)} à ${analysis.close.toFixed(2)}.
       Les bandes d'interprétation (95-100 très favorable → 0-39 défavorable) sont provisoires tant que le module de validation n'a pas accumulé assez d'historique.
+    </div>
+    <div class="score-disclaimer">
+      <strong>Lecture des bandes :</strong> seule la zone la plus basse (score &lt; 35, environ 10% des semaines depuis 2017) montre une régularité statistique sur la suite — un rebond moyen à horizon 1 mois, observé sur 14 épisodes de marché distincts (2018, 2020, 2022, 2023, 2025...), consistant sur l'ensemble des fenêtres testées. Les bandes intermédiaires et hautes décrivent le contexte présent, sans lien démontré avec la performance future — comparer deux semaines entre elles au-dessus de ce seuil n'a pas de sens prédictif.
+      Ceci reste une observation historique datée, pas un signal d'achat : rien ne garantit sa répétition, et l'ampleur du rebond a fortement varié d'un épisode à l'autre.
+      ${inLowZone ? '<div class="zone-active">Le score actuel se situe dans cette zone basse.</div>' : ''}
     </div>
   `;
 }
@@ -1703,6 +1793,124 @@ function pillarColor(score) {
   return 'var(--red)';
 }
 
+// --------------------------------------------------------------
+// Libellés et explications des sous-indicateurs (notes -2..+2)
+// Les seuils cités correspondent exactement à ceux codés dans
+// score-engine.js — aucune valeur inventée ici.
+// --------------------------------------------------------------
+const NOTE_LABELS = {
+  prixVsEma21: 'Prix vs EMA21',
+  ema21VsEma50: 'EMA21 vs EMA50',
+  rsi: 'RSI (force du momentum)',
+  macdNiveau: 'Niveau du MACD',
+  macdAcceleration: 'Accélération du MACD',
+  vix: 'VIX (nervosité implicite)',
+  atr: 'Amplitude hebdomadaire (ATR%)',
+  ecartRatio: 'Concentration (ratio SPY/RSP vs sa moyenne)',
+};
+
+function explainNote(noteKey, value, indicators) {
+  const v = value.toFixed(2);
+  switch (noteKey) {
+    case 'prixVsEma21':
+      return value > 0
+        ? `Note ${v} : le prix est actuellement au-dessus de l'EMA21.`
+        : `Note ${v} : le prix est actuellement en dessous de l'EMA21.`;
+    case 'ema21VsEma50':
+      return value > 0
+        ? `Note ${v} : l'EMA21 est au-dessus de l'EMA50 — tendance de fond haussière au sens de cet indicateur.`
+        : `Note ${v} : l'EMA21 est en dessous de l'EMA50 — tendance de fond baissière au sens de cet indicateur.`;
+    case 'rsi': {
+      const rsiVal = indicators?.rsi;
+      return `Note ${v} : RSI actuel${rsiVal !== undefined ? ` = ${rsiVal.toFixed(0)}` : ''} (le calcul prend 50 comme neutre, 80 comme note pleine +2, 20 comme note pleine -2).`;
+    }
+    case 'macdNiveau':
+      return value > 0
+        ? `Note ${v} : l'histogramme MACD est positif — momentum haussier au sens de cet indicateur.`
+        : `Note ${v} : l'histogramme MACD est négatif — momentum baissier au sens de cet indicateur.`;
+    case 'macdAcceleration':
+      return value > 0
+        ? `Note ${v} : l'histogramme MACD accélère à la hausse par rapport à la semaine précédente.`
+        : `Note ${v} : l'histogramme MACD accélère à la baisse par rapport à la semaine précédente.`;
+    case 'vix': {
+      const vixVal = indicators?.vix;
+      return `Note ${v} : VIX actuel${vixVal !== undefined ? ` = ${vixVal.toFixed(1)}` : ''} (seuils codés : <15 très favorable, 15-20 favorable, 20-25 neutre, 25-30 défavorable, >30 très défavorable).`;
+    }
+    case 'atr': {
+      const atrVal = indicators?.atrPct;
+      return `Note ${v} : ATR${atrVal !== undefined ? ` = ${atrVal.toFixed(2)}%` : ''} du prix (référence : ~1.5-2.5% en semaine calme, >4% en semaine agitée).`;
+    }
+    case 'ecartRatio':
+      return value < 0
+        ? `Note ${v} : le ratio SPY/RSP s'envole au-dessus de sa moyenne récente — concentration croissante sur les méga-caps, lu comme un signal de fragilité.`
+        : `Note ${v} : le ratio SPY/RSP est proche ou en dessous de sa moyenne récente — pas de signe de concentration accélérée.`;
+    default:
+      return `Note ${v}.`;
+  }
+}
+
+function getPreviousEntry(currentDate) {
+  const history = loadHistory();
+  const prior = history.filter((h) => h.date < currentDate).sort((a, b) => b.date.localeCompare(a.date));
+  return prior.length > 0 ? prior[0] : null;
+}
+
+function deltaSpan(current, previous, { higherIsBetter = true, decimals = 2, suffix = '' } = {}) {
+  if (previous === undefined || previous === null) return '<span class="note-delta flat">— (1ère mesure)</span>';
+  const d = current - previous;
+  if (Math.abs(d) < 1e-9) return '<span class="note-delta flat">= inchangé</span>';
+  const goingUp = d > 0;
+  const cls = (goingUp === higherIsBetter) ? 'up' : 'down';
+  return `<span class="note-delta ${cls}">${goingUp ? '▲' : '▼'} ${goingUp ? '+' : ''}${d.toFixed(decimals)}${suffix} vs sem. précédente</span>`;
+}
+
+function renderPillarDetail(key, pillar, analysis, prevEntry) {
+  const prevPillar = prevEntry ? prevEntry.pillars[key] : null;
+  const scoreDelta = prevPillar ? pillar.score - prevPillar.score : null;
+
+  let summary;
+  if (!prevEntry) {
+    summary = `Première mesure enregistrée pour ce pilier — pas de comparaison possible avec une semaine antérieure.`;
+  } else if (Math.abs(scoreDelta) < 0.5) {
+    summary = `Le score du pilier est resté stable par rapport à la semaine précédente (${prevPillar.score.toFixed(0)} → ${pillar.score.toFixed(0)}).`;
+  } else {
+    // Identifie le sous-indicateur dont la note a le plus varié -> principal contributeur du mouvement
+    let maxAbsDelta = -1, driverKey = null;
+    for (const noteKey of Object.keys(pillar.notes)) {
+      const prevNote = prevPillar.notes[noteKey];
+      if (prevNote === undefined) continue;
+      const d = Math.abs(pillar.notes[noteKey] - prevNote);
+      if (d > maxAbsDelta) { maxAbsDelta = d; driverKey = noteKey; }
+    }
+    const direction = scoreDelta > 0 ? 'en hausse' : 'en baisse';
+    summary = `Score ${direction} de ${prevPillar.score.toFixed(0)} à ${pillar.score.toFixed(0)} par rapport à la semaine précédente.` +
+      (driverKey ? ` Principal contributeur du mouvement : <strong>${NOTE_LABELS[driverKey] || driverKey}</strong>.` : '');
+  }
+
+  const noteRows = Object.entries(pillar.notes).map(([noteKey, value]) => {
+    const prevValue = prevPillar ? prevPillar.notes[noteKey] : undefined;
+    return `
+      <div class="note-row">
+        <span class="note-label">${NOTE_LABELS[noteKey] || noteKey}</span>
+        <span class="note-value">${value.toFixed(2)}</span>
+        ${deltaSpan(value, prevValue, { decimals: 2 })}
+      </div>
+    `;
+  }).join('');
+
+  const explanations = Object.entries(pillar.notes)
+    .map(([noteKey, value]) => explainNote(noteKey, value, analysis.indicators))
+    .join(' ');
+
+  return `
+    <div class="pillar-detail">
+      <div class="detail-summary">${summary}</div>
+      ${noteRows}
+      <div class="note-explain">${explanations}</div>
+    </div>
+  `;
+}
+
 function renderPillars(analysis) {
   const grid = document.getElementById('pillars-grid');
   if (!analysis.success) {
@@ -1710,11 +1918,13 @@ function renderPillars(analysis) {
     return;
   }
 
+  const prevEntry = getPreviousEntry(analysis.date);
+
   grid.innerHTML = Object.entries(analysis.pillars).map(([key, pillar]) => {
     const weight = analysis.weights[key];
     const color = pillarColor(pillar.score);
     return `
-      <div class="pillar-card">
+      <div class="pillar-card" data-pillar="${key}">
         <div class="pillar-name">
           <span>${PILLAR_LABELS[key]}</span>
           <span class="pillar-weight">${weight}%</span>
@@ -1723,9 +1933,19 @@ function renderPillars(analysis) {
         <div class="gauge-track">
           <div class="gauge-fill" style="width:${pillar.score}%; background:${color};"></div>
         </div>
+        <div class="pillar-toggle-hint"><span class="chevron">▸</span> Pourquoi ce score ?</div>
+        ${renderPillarDetail(key, pillar, analysis, prevEntry)}
       </div>
     `;
   }).join('');
+
+  grid.querySelectorAll('.pillar-card').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      // Ignore les clics à l'intérieur du panneau déjà ouvert (pas de fermeture accidentelle en lisant le détail)
+      if (e.target.closest('.pillar-detail')) return;
+      card.classList.toggle('open');
+    });
+  });
 }
 
 // --------------------------------------------------------------
@@ -1843,7 +2063,7 @@ function renderHistory() {
   const rows = [...history].reverse().map((entry) => `
     <tr>
       <td>${formatDate(entry.date)}</td>
-      <td class="score-cell level-${entry.interpretation.level}">${entry.globalScore.toFixed(1)}</td>
+      <td class="score-cell level-${entry.interpretation.level}">${entry.globalScore.toFixed(0)}</td>
       <td>${entry.close.toFixed(2)}</td>
       <td>${formatPerf(entry.validation.perf1w)}</td>
       <td>${formatPerf(entry.validation.perf1m)}</td>
