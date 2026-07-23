@@ -11,13 +11,14 @@ const TICKERS = {
   vix: '^vix',
 };
 
-// Module Gave (cadran macro) — tickers séparés, sources forcées pour GLD/TLT/SPY
-// (adjClose requis pour TLT/SPY ; GLD n'a pas de dividende donc close=adjClose,
-// mais on force quand même la source Yahoo pour rester sur un pipeline homogène).
+// Module Gave (cadran macro) — cadence MENSUELLE, tickers séparés, sources forcées Yahoo.
+// interval='mo' + range='max' : on récupère tout l'historique disponible ; les données
+// antérieures à ce que Yahoo couvre (or avant 2004, WTI en continu sans trou) proviennent
+// du socle statique gave-seed-data.js, fusionné par gave-engine.js (cf. mergeSeedAndLive).
 const GAVE_TICKERS = {
   gld: { ticker: 'gld.us', source: 'yahoo' },
   tlt: { ticker: 'tlt.us', source: 'yahoo' },
-  spyAdj: { ticker: 'spy.us', source: 'yahoo' },
+  spy: { ticker: 'spy.us', source: 'yahoo' },
   wti: { ticker: 'CL=F', source: 'yahoo' }, // symbole Yahoo natif — cl.f n'existe dans aucun mapping
 };
 
@@ -90,19 +91,20 @@ async function fetchAllData(statusCallback) {
 
 async function fetchGaveTicker(key, statusCallback) {
   const { ticker, source } = GAVE_TICKERS[key];
-  statusCallback(`Récupération de ${key.toUpperCase()} (${ticker}, ${source})...`, 'pending');
+  statusCallback(`Récupération de ${key.toUpperCase()} (${ticker}, mensuel, ${source})...`, 'pending');
   try {
-    const res = await fetch(`/api/prices?ticker=${encodeURIComponent(ticker)}&interval=w&source=${source}`);
+    const res = await fetch(`/api/prices?ticker=${encodeURIComponent(ticker)}&interval=mo&range=max&source=${source}`);
     const json = await res.json();
     if (!res.ok || json.error) {
       statusCallback(`Échec ${key.toUpperCase()} : ${json.error || 'erreur inconnue'}`, 'err');
       return null;
     }
     // GLD/WTI : pas de dividende, close = adjClose (champ parfois absent) ; TLT/SPY : adjClose requis.
+    // Normalisation de la date au format YYYY-MM-01 pour être alignée avec le socle statique.
     const series = json.data
       .filter((c) => c.close !== null && c.close !== undefined)
-      .map((c) => [c.date, c.adjClose !== null && c.adjClose !== undefined ? c.adjClose : c.close]);
-    statusCallback(`${key.toUpperCase()} OK (source: ${json.source}, ${series.length} bougies)`, 'ok');
+      .map((c) => [c.date.slice(0, 7) + '-01', c.adjClose !== null && c.adjClose !== undefined ? c.adjClose : c.close]);
+    statusCallback(`${key.toUpperCase()} OK (source: ${json.source}, ${series.length} mois)`, 'ok');
     return series;
   } catch (e) {
     statusCallback(`Erreur réseau ${key.toUpperCase()} : ${e.message}`, 'err');
@@ -111,13 +113,13 @@ async function fetchGaveTicker(key, statusCallback) {
 }
 
 async function fetchAllGaveData(statusCallback) {
-  const [gld, tlt, spyAdj, wti] = await Promise.all([
+  const [gld, tlt, spy, wti] = await Promise.all([
     fetchGaveTicker('gld', statusCallback),
     fetchGaveTicker('tlt', statusCallback),
-    fetchGaveTicker('spyAdj', statusCallback),
+    fetchGaveTicker('spy', statusCallback),
     fetchGaveTicker('wti', statusCallback),
   ]);
-  return { gld, tlt, spyAdj, wti };
+  return { gld, tlt, spy, wti };
 }
 
 const STORAGE_KEY_GAVE_CACHE = 'marketRegimeGaveCache_v1';
@@ -144,9 +146,11 @@ function isGaveCacheFresh(cache) {
 
 /**
  * Calcule (ou réutilise depuis le cache mensuel) le module Gave.
- * @param {Array} spxSeries - réutilise les données ^spx déjà récupérées par le module hebdomadaire.
+ * Ne dépend plus des données ^spx du module hebdomadaire : le module Gave
+ * utilise désormais SPY comme proxy actions (cohérent avec sa propre cadence
+ * mensuelle et déjà récupéré pour la Règle 2).
  */
-async function runGaveAnalysis(spxSeries, statusCallback, forceRefresh = false) {
+async function runGaveAnalysis(statusCallback, forceRefresh = false) {
   const cache = loadGaveCache();
   if (!forceRefresh && isGaveCacheFresh(cache)) {
     statusCallback('Module Gave : cache mensuel réutilisé (moins de 30 jours).', 'ok');
@@ -155,12 +159,11 @@ async function runGaveAnalysis(spxSeries, statusCallback, forceRefresh = false) 
 
   const gaveData = await fetchAllGaveData(statusCallback);
   const result = computeGaveIndicators({
-    gld: gaveData.gld,
+    gldLive: gaveData.gld,
     tlt: gaveData.tlt,
-    spyAdj: gaveData.spyAdj,
-    wti: gaveData.wti,
-    spx: spxSeries,
-  });
+    spy: gaveData.spy,
+    wtiLive: gaveData.wti,
+  }, { GOLD_SEED, WTI_SEED });
 
   if (result.success) {
     saveGaveCache(result);
