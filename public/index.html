@@ -149,6 +149,40 @@
   .level-neutral { color: var(--gold); }
   .level-caution { color: var(--amber); }
   .level-unfavorable { color: var(--red); }
+  .level-nominal { color: var(--gold); }
+  .level-alert { color: var(--red); }
+
+  /* --- Détail repliable du score global --- */
+  .score-detail-toggle {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-top: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .score-detail-toggle .chevron { transition: transform 0.15s ease; display: inline-block; }
+  .score-detail-panel {
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* --- Carte Concentration : donnée factuelle neutre, pas de gradation --- */
+  .pillar-card-neutral .pillar-factual-value {
+    font-family: var(--font-data);
+    font-size: 1.1rem;
+    color: var(--text);
+    margin: 6px 0 8px;
+  }
+  .pillar-card-neutral .pillar-factual-note {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
 
   /* --- Jauges des piliers --- */
   .pillars-grid {
@@ -1140,6 +1174,20 @@ function interpretScore(globalScore) {
   return { label: 'Contexte défavorable', level: 'unfavorable' };
 }
 
+/**
+ * Lecture binaire du score global — cf. test de granularité (session du 24/07/2026) :
+ * au-dessus de 40, l'échelle continue n'ajoute pas d'information vérifiée contre des
+ * mesures de marché indépendantes (crédit HYG/IEF, structure de vol VIX/VIX3M).
+ * Seule la zone < 40 montre une régularité statistique. On affiche donc en façade
+ * un état binaire ; le chiffre exact reste disponible dans le détail (cf. renderScore).
+ */
+function interpretScoreBinary(globalScore) {
+  if (globalScore < 40) {
+    return { label: 'Alerte — stress de marché', level: 'alert', isAlert: true };
+  }
+  return { label: 'Rien à signaler', level: 'nominal', isAlert: false };
+}
+
 // --------------------------------------------------------------
 // Utilitaires
 // --------------------------------------------------------------
@@ -1827,25 +1875,40 @@ function renderScore(analysis) {
     return;
   }
 
-  const level = analysis.interpretation.level;
+  const binary = interpretScoreBinary(analysis.globalScore);
   const LOW_ZONE_THRESHOLD = 35; // cf. test-robustesse-rebond-bas.js — seuil du décile où un effet a été mesuré comme robuste
   const inLowZone = analysis.globalScore < LOW_ZONE_THRESHOLD;
 
   panel.innerHTML = `
     <div class="score-dial">
-      <div class="score-label level-${level}">${analysis.interpretation.label}</div>
-      <div class="score-number level-${level}">Score détaillé : <span class="value">${analysis.globalScore.toFixed(0)}</span>/100</div>
+      <div class="score-label level-${binary.level}">${binary.label}</div>
     </div>
     <div class="score-caveat">
       Clôture du ${formatDate(analysis.date)} à ${analysis.close.toFixed(2)}.
-      Les bandes d'interprétation (95-100 très favorable → 0-39 défavorable) sont provisoires tant que le module de validation n'a pas accumulé assez d'historique.
+      Affichage binaire : au-dessus de 40, le score continu ne s'est pas montré informatif contre des mesures de marché indépendantes — le détail du chiffre reste disponible ci-dessous à titre de référence, pas comme échelle de qualité.
     </div>
-    <div class="score-disclaimer">
-      <strong>Lecture des bandes :</strong> seule la zone la plus basse (score &lt; 35, environ 10% des semaines depuis 2017) montre une régularité statistique sur la suite — un rebond moyen à horizon 1 mois, observé sur 14 épisodes de marché distincts (2018, 2020, 2022, 2023, 2025...), consistant sur l'ensemble des fenêtres testées. Les bandes intermédiaires et hautes décrivent le contexte présent, sans lien démontré avec la performance future — comparer deux semaines entre elles au-dessus de ce seuil n'a pas de sens prédictif.
-      Ceci reste une observation historique datée, pas un signal d'achat : rien ne garantit sa répétition, et l'ampleur du rebond a fortement varié d'un épisode à l'autre.
-      ${inLowZone ? '<div class="zone-active">Le score actuel se situe dans cette zone basse.</div>' : ''}
+    <div class="score-detail-toggle" id="score-detail-toggle">
+      <span class="chevron">▸</span> Voir le chiffre détaillé
+    </div>
+    <div class="score-detail-panel" id="score-detail-panel" style="display:none;">
+      <div class="score-number level-${analysis.interpretation.level}">Score détaillé : <span class="value">${analysis.globalScore.toFixed(0)}</span>/100 — ${analysis.interpretation.label}</div>
+      <div class="score-disclaimer">
+        <strong>Lecture des bandes :</strong> seule la zone la plus basse (score &lt; 35, environ 10% des semaines depuis 2017) montre une régularité statistique sur la suite — un rebond moyen à horizon 1 mois, observé sur 14 épisodes de marché distincts (2018, 2020, 2022, 2023, 2025...), consistant sur l'ensemble des fenêtres testées. Les bandes intermédiaires et hautes décrivent le contexte présent, sans lien démontré avec la performance future — comparer deux semaines entre elles au-dessus de ce seuil n'a pas de sens prédictif.
+        Ceci reste une observation historique datée, pas un signal d'achat : rien ne garantit sa répétition, et l'ampleur du rebond a fortement varié d'un épisode à l'autre.
+        ${inLowZone ? '<div class="zone-active">Le score actuel se situe dans cette zone basse.</div>' : ''}
+      </div>
     </div>
   `;
+
+  const toggle = document.getElementById('score-detail-toggle');
+  const detailPanel = document.getElementById('score-detail-panel');
+  if (toggle && detailPanel) {
+    toggle.addEventListener('click', () => {
+      const isOpen = detailPanel.style.display !== 'none';
+      detailPanel.style.display = isOpen ? 'none' : 'block';
+      toggle.querySelector('.chevron').textContent = isOpen ? '▸' : '▾';
+    });
+  }
 }
 
 function formatDate(isoDate) {
@@ -1998,6 +2061,30 @@ function renderPillars(analysis) {
 
   grid.innerHTML = Object.entries(analysis.pillars).map(([key, pillar]) => {
     const weight = analysis.weights[key];
+
+    // Concentration : formule saine (ratio SPY/RSP), mais son interprétation en score
+    // gradé bon/mauvais n'a pas été validée (3 tests distincts, aucun signal détecté —
+    // session du 24/07/2026). Affichage en donnée factuelle neutre plutôt qu'en score coloré.
+    if (key === 'concentration') {
+      const ratio = analysis.indicators?.ratioSpyRsp;
+      const ratioMA = analysis.indicators?.ratioMA;
+      const ecartPct = (ratio !== undefined && ratioMA) ? ((ratio - ratioMA) / ratioMA * 100) : null;
+      const ecartLabel = ecartPct === null ? 'Donnée indisponible'
+        : `SPY vs équipondéré : ${ecartPct >= 0 ? '+' : ''}${ecartPct.toFixed(2)}% vs sa moyenne 10 sem.`;
+      return `
+        <div class="pillar-card pillar-card-neutral" data-pillar="${key}">
+          <div class="pillar-name">
+            <span>${PILLAR_LABELS[key]}</span>
+            <span class="pillar-weight">${weight}%</span>
+          </div>
+          <div class="pillar-factual-value">${ecartLabel}</div>
+          <div class="pillar-factual-note">Donnée factuelle — pas de lecture bon/mauvais validée. La formule (ratio SPY/S&amp;P équipondéré) est correcte ; ce qu'elle signifie pour la suite du marché ne l'est pas.</div>
+          <div class="pillar-toggle-hint"><span class="chevron">▸</span> Détail du calcul</div>
+          ${renderPillarDetail(key, pillar, analysis, prevEntry)}
+        </div>
+      `;
+    }
+
     const color = pillarColor(pillar.score);
     return `
       <div class="pillar-card" data-pillar="${key}">
